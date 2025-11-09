@@ -1,13 +1,23 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+var Version = "unknown"
+
 func main() {
+	log.Printf("[MCP Server]启动 版本: %s", Version)
+
+	// 加载配置
+	if err := LoadConfig(); err != nil {
+		log.Fatalf("加载配置失败: %v", err)
+	}
+
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "wechat-robot-mcp-server",
 		Version: "1.0.0",
@@ -22,7 +32,7 @@ func main() {
 		return server
 	}, nil)
 
-	if err := http.ListenAndServe("", handler); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", MCPServerPort), handler); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
 }
