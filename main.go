@@ -32,7 +32,11 @@ func main() {
 		return server
 	}, nil)
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", MCPServerPort), handler); err != nil {
+	mux := http.NewServeMux()
+	mux.Handle("/api/v1/messages", http.HandlerFunc(onWeChatMessages))
+	mux.Handle("/mcp", handler)
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", MCPServerPort), mux); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
 }
