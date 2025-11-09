@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -34,29 +35,15 @@ func TenantMiddleware(next mcp.MethodHandler) mcp.MethodHandler {
 func parseRobotContext(meta map[string]any) RobotContext {
 	rc := RobotContext{}
 
-	if v, ok := meta["robotId"].(float64); ok {
-		rc.RobotID = int64(v)
+	data, err := json.Marshal(meta)
+	if err != nil {
+		log.Printf("序列化 meta 失败: %v", err)
+		return rc
 	}
-	if v, ok := meta["robotCode"].(string); ok {
-		rc.RobotCode = v
-	}
-	if v, ok := meta["robotRedisDb"].(float64); ok {
-		rc.RobotRedisDB = uint(v)
-	}
-	if v, ok := meta["robotWxId"].(string); ok {
-		rc.RobotWxID = v
-	}
-	if v, ok := meta["fromWxId"].(string); ok {
-		rc.FromWxID = v
-	}
-	if v, ok := meta["senderWxId"].(string); ok {
-		rc.SenderWxID = v
-	}
-	if v, ok := meta["messageId"].(float64); ok {
-		rc.MessageID = int64(v)
-	}
-	if v, ok := meta["refMessageId"].(float64); ok {
-		rc.RefMessageID = int64(v)
+
+	if err := json.Unmarshal(data, &rc); err != nil {
+		log.Printf("反序列化到 RobotContext 失败: %v", err)
+		return rc
 	}
 
 	return rc

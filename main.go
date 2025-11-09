@@ -31,7 +31,7 @@ func main() {
 
 	handler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
 		return server
-	}, nil)
+	}, &mcp.StreamableHTTPOptions{})
 
 	mux := http.NewServeMux()
 	mux.Handle("/api/v1/messages", http.HandlerFunc(onWeChatMessages))
