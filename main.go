@@ -22,6 +22,7 @@ func main() {
 		Name:    "wechat-robot-mcp-server",
 		Version: "1.0.0",
 	}, nil)
+	server.AddReceivingMiddleware(TenantMiddleware)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "helloWorld",

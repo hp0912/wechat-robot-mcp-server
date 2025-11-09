@@ -1,13 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/joho/godotenv"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type MysqlSettingS struct {
@@ -19,9 +24,18 @@ type MysqlSettingS struct {
 
 var (
 	MCPServerPort int
-	DB            *gorm.DB
 	MysqlSettings = &MysqlSettingS{}
 )
+
+// TenantDBManager 负责基于 RobotCode 缓存和创建不同的 *gorm.DB 连接
+type TenantDBManager struct {
+	mu      sync.RWMutex
+	tenants map[string]*gorm.DB
+}
+
+var tenantDB = &TenantDBManager{
+	tenants: make(map[string]*gorm.DB),
+}
 
 func LoadConfig() error {
 	loadEnvConfig()
@@ -54,4 +68,58 @@ func loadEnvConfig() {
 	MysqlSettings.Port = os.Getenv("MYSQL_PORT")
 	MysqlSettings.User = os.Getenv("MYSQL_USER")
 	MysqlSettings.Password = os.Getenv("MYSQL_PASSWORD")
+}
+
+// GetDBByRobotCode 获取指定 RobotCode 对应的 *gorm.DB（带缓存）
+func GetDBByRobotCode(robotCode string) (*gorm.DB, error) {
+	if robotCode == "" {
+		return nil, fmt.Errorf("robotCode 为空")
+	}
+	// 读缓存
+	tenantDB.mu.RLock()
+	db, ok := tenantDB.tenants[robotCode]
+	tenantDB.mu.RUnlock()
+	if ok && db != nil {
+		return db, nil
+	}
+
+	// 双重检查加锁创建
+	tenantDB.mu.Lock()
+	defer tenantDB.mu.Unlock()
+	if db, ok := tenantDB.tenants[robotCode]; ok && db != nil {
+		return db, nil
+	}
+
+	dsn := buildDSNForRobot(robotCode)
+	newDB, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Warn),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("打开数据库失败(%s): %w", robotCode, err)
+	}
+	// 基础连接池设置
+	sqlDB, err := newDB.DB()
+	if err != nil {
+		return nil, fmt.Errorf("获取底层连接失败(%s): %w", robotCode, err)
+	}
+	sqlDB.SetMaxOpenConns(50)
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetConnMaxLifetime(60 * time.Minute)
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
+	if err := sqlDB.Ping(); err != nil {
+		return nil, fmt.Errorf("数据库不可用(%s): %w", robotCode, err)
+	}
+
+	tenantDB.tenants[robotCode] = newDB
+	return newDB, nil
+}
+
+func buildDSNForRobot(robotCode string) string {
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		MysqlSettings.User,
+		MysqlSettings.Password,
+		MysqlSettings.Host,
+		MysqlSettings.Port,
+		robotCode,
+	)
 }
