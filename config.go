@@ -7,10 +7,20 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	"gorm.io/gorm"
 )
+
+type MysqlSettingS struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+}
 
 var (
 	MCPServerPort int
+	DB            *gorm.DB
+	MysqlSettings = &MysqlSettingS{}
 )
 
 func LoadConfig() error {
@@ -39,4 +49,9 @@ func loadEnvConfig() {
 		log.Fatal("MCPServerPort 必须在 1 到 65535 之间")
 	}
 	MCPServerPort = port
+
+	MysqlSettings.Host = os.Getenv("MYSQL_HOST")
+	MysqlSettings.Port = os.Getenv("MYSQL_PORT")
+	MysqlSettings.User = os.Getenv("MYSQL_USER")
+	MysqlSettings.Password = os.Getenv("MYSQL_PASSWORD")
 }
