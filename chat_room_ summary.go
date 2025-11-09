@@ -1,0 +1,173 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/sashabaranov/go-openai"
+)
+
+type TextMessageItem struct {
+	Nickname  string `json:"nickname"`
+	Message   string `json:"message"`
+	CreatedAt int64  `json:"created_at"`
+}
+
+type ChatRoomSummaryInput struct {
+	RecentDuration int `json:"recent_duration" jsonschema:"required,description=最近多久的聊天记录，单位是秒，比如用户想总结最近一个小时的聊天记录，则传入3600，如果用户想总结最近一天的聊天记录，则传入86400。你需要根据用户的需求，转换成秒。"`
+}
+
+func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *ChatRoomSummaryInput) (*mcp.CallToolResult, any, error) {
+	rc, ok := GetRobotContext(ctx)
+	if !ok {
+		return CallToolResultError("获取机器人上下文失败")
+	}
+
+	db, ok := GetDB(ctx)
+	if !ok {
+		return CallToolResultError("获取数据库连接失败")
+	}
+
+	repo := NewRepo(ctx, db)
+
+	globalSettings, err := repo.GetGlobalSettings()
+	if err != nil {
+		return CallToolResultError(fmt.Sprintf("获取全局设置失败: %v", err))
+	}
+	if globalSettings == nil || globalSettings.ChatAIEnabled == nil || !*globalSettings.ChatAIEnabled || globalSettings.ChatAPIKey == "" || globalSettings.ChatBaseURL == "" {
+		return CallToolResultError("全局配置群聊总结未开启")
+	}
+
+	chatRoomSettings, err := repo.GetChatRoomSettings(rc.FromWxID)
+	if err != nil {
+		return CallToolResultError(fmt.Sprintf("获取群聊设置失败: %v", err))
+	}
+	if chatRoomSettings == nil || chatRoomSettings.ChatRoomSummaryEnabled == nil || !*chatRoomSettings.ChatRoomSummaryEnabled {
+		return CallToolResultError("群聊总结未开启")
+	}
+
+	chatRoomName := rc.FromWxID
+	chatRoom, err := repo.GetContactByWechatID(rc.FromWxID)
+	if err != nil {
+		return CallToolResultError(fmt.Sprintf("获取群聊信息失败: %v", err))
+	}
+	if chatRoom != nil && chatRoom.Nickname != nil && *chatRoom.Nickname != "" {
+		chatRoomName = *chatRoom.Nickname
+	}
+
+	startTime := time.Now().Add(-time.Duration(params.RecentDuration) * time.Second)
+	endTime := time.Now()
+	messages, err := repo.GetMessagesByTimeRange(rc.RobotWxID, rc.FromWxID, startTime.Unix(), endTime.Unix())
+	if err != nil {
+		return CallToolResultError(fmt.Sprintf("获取聊天记录失败: %v", err))
+	}
+	if len(messages) < 100 {
+		return CallToolResultError("聊天记录不足100条，不需要总结")
+	}
+
+	// 组装对话记录为字符串
+	var content []string
+	for _, message := range messages {
+		// 将时间戳秒格式化为时间YYYY-MM-DD HH:MM:SS 字符串
+		timeStr := time.Unix(message.CreatedAt, 0).Format("2006-01-02 15:04:05")
+		content = append(content, fmt.Sprintf(`[%s] {"%s": "%s"}--end--`, timeStr, message.Nickname, strings.ReplaceAll(message.Message, "\n", "。。")))
+	}
+	prompt := `你是一个中文的群聊总结的助手，你可以为一个微信的群聊记录，提取并总结每个时间段大家在重点讨论的话题内容。
+
+每一行代表一个人的发言，每一行的的格式为： {"[time] {nickname}": "{content}"}--end--
+
+请帮我将给出的群聊内容总结成一个今日的群聊报告，包含不多于10个的话题的总结（如果还有更多话题，可以在后面简单补充）。每个话题包含以下内容：
+- 话题名(50字以内，带序号1️⃣2️⃣3️⃣，同时附带热度，以🔥数量表示）
+- 参与者(不超过5个人，将重复的人名去重)
+- 时间段(从几点到几点)
+- 过程(50到200字左右）
+- 评价(50字以下)
+- 分割线： ------------
+
+另外有以下要求：
+1. 每个话题结束使用 ------------ 分割
+2. 使用中文冒号
+3. 无需大标题
+4. 开始给出本群讨论风格的整体评价，例如活跃、太水、太黄、太暴力、话题不集中、无聊诸如此类
+`
+	msg := fmt.Sprintf("群名称: %s\n聊天记录如下:\n%s", chatRoomName, strings.Join(content, "\n"))
+	// AI总结
+	aiMessages := []openai.ChatCompletionMessage{
+		{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: prompt,
+		},
+		{
+			Role:    openai.ChatMessageRoleUser,
+			Content: msg,
+		},
+	}
+
+	// 默认使用AI回复
+	aiApiKey := globalSettings.ChatAPIKey
+	if *chatRoomSettings.ChatAPIKey != "" {
+		aiApiKey = *chatRoomSettings.ChatAPIKey
+	}
+	aiConfig := openai.DefaultConfig(aiApiKey)
+	aiApiBaseURL := strings.TrimRight(globalSettings.ChatBaseURL, "/")
+	if chatRoomSettings.ChatBaseURL != nil && *chatRoomSettings.ChatBaseURL != "" {
+		aiApiBaseURL = strings.TrimRight(*chatRoomSettings.ChatBaseURL, "/")
+	}
+	aiConfig.BaseURL = NormalizeAIBaseURL(aiApiBaseURL)
+	model := globalSettings.ChatRoomSummaryModel
+	if chatRoomSettings.ChatRoomSummaryModel != nil && *chatRoomSettings.ChatRoomSummaryModel != "" {
+		model = *chatRoomSettings.ChatRoomSummaryModel
+	}
+	ai := openai.NewClientWithConfig(aiConfig)
+	var resp openai.ChatCompletionResponse
+	resp, err = ai.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model:               model,
+			Messages:            aiMessages,
+			Stream:              false,
+			MaxCompletionTokens: 2000,
+		},
+	)
+	if err != nil {
+		return CallToolResultError(fmt.Sprintf("AI 总结失败: %v", err))
+	}
+	// 返回消息为空
+	if resp.Choices[0].Message.Content == "" {
+		return CallToolResultError("AI 总结失败，返回了空内容")
+	}
+
+	replyMsg := fmt.Sprintf("#消息总结\n让我们一起来看看群友们都聊了什么有趣的话题吧~\n\n%s", resp.Choices[0].Message.Content)
+	var respData BaseResponse
+	client := resty.New()
+	robotResp, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(map[string]string{
+			"to_wxid": rc.FromWxID,
+			"content": replyMsg,
+		}).
+		SetResult(&respData).
+		Post(fmt.Sprintf("http://client_%s/api/v1/robot/message/send/longtext", rc.RobotCode))
+	if err != nil {
+		return CallToolResultError(fmt.Sprintf("发送聊天总结失败: %v", err))
+	}
+	if robotResp.StatusCode() != http.StatusOK {
+		return CallToolResultError(fmt.Sprintf("发送聊天总结失败，返回状态码不是 200: %d", robotResp.StatusCode()))
+	}
+	if respData.Code != 200 {
+		return CallToolResultError(fmt.Sprintf("发送聊天总结失败，返回状态码不是 200: %s", respData.Message))
+	}
+
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{
+				Text: "聊天总结发送成功",
+			},
+		},
+	}, nil, nil
+}

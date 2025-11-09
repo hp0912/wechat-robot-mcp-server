@@ -25,9 +25,9 @@ func main() {
 	server.AddReceivingMiddleware(TenantMiddleware)
 
 	mcp.AddTool(server, &mcp.Tool{
-		Name:        "helloWorld",
-		Description: "Say hello to the world",
-	}, HelloWorld)
+		Name:        "ChatRoomSummary",
+		Description: "微信群聊总结，当用户想总结群聊内容时，可以调用该工具。",
+	}, ChatRoomSummary)
 
 	handler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
 		return server
