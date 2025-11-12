@@ -1,4 +1,4 @@
-package main
+package tools
 
 import (
 	"context"
@@ -10,51 +10,57 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/sashabaranov/go-openai"
-)
 
-type TextMessageItem struct {
-	Nickname  string `json:"nickname"`
-	Message   string `json:"message"`
-	CreatedAt int64  `json:"created_at"`
-}
+	"wechat-robot-mcp-server/model"
+	"wechat-robot-mcp-server/repository"
+	"wechat-robot-mcp-server/robot_context"
+	"wechat-robot-mcp-server/utils"
+)
 
 type ChatRoomSummaryInput struct {
 	RecentDuration int `json:"recent_duration" jsonschema:"最近多久的聊天记录，单位是秒，比如用户想总结最近一个小时的聊天记录，则传入3600，如果用户想总结最近一天的聊天记录，则传入86400。你需要根据用户的需求，转换成秒。"`
 }
 
 func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *ChatRoomSummaryInput) (*mcp.CallToolResult, any, error) {
-	rc, ok := GetRobotContext(ctx)
-	if !ok {
-		return CallToolResultError("获取机器人上下文失败")
+	if params.RecentDuration > 24*3600 {
+		return utils.CallToolResultError("最多只能总结最近24小时内的聊天记录")
 	}
 
-	db, ok := GetDB(ctx)
+	rc, ok := robot_context.GetRobotContext(ctx)
 	if !ok {
-		return CallToolResultError("获取数据库连接失败")
+		return utils.CallToolResultError("获取机器人上下文失败")
 	}
 
-	repo := NewRepo(ctx, db)
+	db, ok := robot_context.GetDB(ctx)
+	if !ok {
+		return utils.CallToolResultError("获取数据库连接失败")
+	}
 
-	globalSettings, err := repo.GetGlobalSettings()
+	globalSettingsRepo := repository.NewGlobalSettingsRepository(ctx, db)
+	chatRoomSettingsRepo := repository.NewChatRoomSettingsRepository(ctx, db)
+	contactRepo := repository.NewContactRepository(ctx, db)
+	messageRepo := repository.NewMessageRepository(ctx, db)
+
+	globalSettings, err := globalSettingsRepo.GetGlobalSettings()
 	if err != nil {
-		return CallToolResultError(fmt.Sprintf("获取全局设置失败: %v", err))
+		return utils.CallToolResultError(fmt.Sprintf("获取全局设置失败: %v", err))
 	}
 	if globalSettings == nil || globalSettings.ChatAIEnabled == nil || !*globalSettings.ChatAIEnabled || globalSettings.ChatAPIKey == "" || globalSettings.ChatBaseURL == "" {
-		return CallToolResultError("全局配置群聊总结未开启")
+		return utils.CallToolResultError("全局配置群聊总结未开启")
 	}
 
-	chatRoomSettings, err := repo.GetChatRoomSettings(rc.FromWxID)
+	chatRoomSettings, err := chatRoomSettingsRepo.GetChatRoomSettings(rc.FromWxID)
 	if err != nil {
-		return CallToolResultError(fmt.Sprintf("获取群聊设置失败: %v", err))
+		return utils.CallToolResultError(fmt.Sprintf("获取群聊设置失败: %v", err))
 	}
 	if chatRoomSettings == nil || chatRoomSettings.ChatRoomSummaryEnabled == nil || !*chatRoomSettings.ChatRoomSummaryEnabled {
-		return CallToolResultError("群聊总结未开启")
+		return utils.CallToolResultError("群聊总结未开启")
 	}
 
 	chatRoomName := rc.FromWxID
-	chatRoom, err := repo.GetContactByWechatID(rc.FromWxID)
+	chatRoom, err := contactRepo.GetContactByWechatID(rc.FromWxID)
 	if err != nil {
-		return CallToolResultError(fmt.Sprintf("获取群聊信息失败: %v", err))
+		return utils.CallToolResultError(fmt.Sprintf("获取群聊信息失败: %v", err))
 	}
 	if chatRoom != nil && chatRoom.Nickname != nil && *chatRoom.Nickname != "" {
 		chatRoomName = *chatRoom.Nickname
@@ -62,12 +68,12 @@ func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *Chat
 
 	startTime := time.Now().Add(-time.Duration(params.RecentDuration) * time.Second)
 	endTime := time.Now()
-	messages, err := repo.GetMessagesByTimeRange(rc.RobotWxID, rc.FromWxID, startTime.Unix(), endTime.Unix())
+	messages, err := messageRepo.GetMessagesByTimeRange(rc.RobotWxID, rc.FromWxID, startTime.Unix(), endTime.Unix())
 	if err != nil {
-		return CallToolResultError(fmt.Sprintf("获取聊天记录失败: %v", err))
+		return utils.CallToolResultError(fmt.Sprintf("获取聊天记录失败: %v", err))
 	}
 	if len(messages) < 100 {
-		return CallToolResultError("聊天记录不足100条，不需要总结")
+		return utils.CallToolResultError("聊天记录不足100条，不需要总结")
 	}
 
 	// 组装对话记录为字符串
@@ -118,32 +124,32 @@ func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *Chat
 	if chatRoomSettings.ChatBaseURL != nil && *chatRoomSettings.ChatBaseURL != "" {
 		aiApiBaseURL = strings.TrimRight(*chatRoomSettings.ChatBaseURL, "/")
 	}
-	aiConfig.BaseURL = NormalizeAIBaseURL(aiApiBaseURL)
-	model := globalSettings.ChatRoomSummaryModel
+	aiConfig.BaseURL = utils.NormalizeAIBaseURL(aiApiBaseURL)
+	AIModel := globalSettings.ChatRoomSummaryModel
 	if chatRoomSettings.ChatRoomSummaryModel != nil && *chatRoomSettings.ChatRoomSummaryModel != "" {
-		model = *chatRoomSettings.ChatRoomSummaryModel
+		AIModel = *chatRoomSettings.ChatRoomSummaryModel
 	}
 	ai := openai.NewClientWithConfig(aiConfig)
 	var resp openai.ChatCompletionResponse
 	resp, err = ai.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model:               model,
+			Model:               AIModel,
 			Messages:            aiMessages,
 			Stream:              false,
 			MaxCompletionTokens: 2000,
 		},
 	)
 	if err != nil {
-		return CallToolResultError(fmt.Sprintf("AI 总结失败: %v", err))
+		return utils.CallToolResultError(fmt.Sprintf("AI 总结失败: %v", err))
 	}
 	// 返回消息为空
 	if resp.Choices[0].Message.Content == "" {
-		return CallToolResultError("AI 总结失败，返回了空内容")
+		return utils.CallToolResultError("AI 总结失败，返回了空内容")
 	}
 
 	replyMsg := fmt.Sprintf("#消息总结\n让我们一起来看看群友们都聊了什么有趣的话题吧~\n\n%s", resp.Choices[0].Message.Content)
-	var respData BaseResponse
+	var respData model.BaseResponse
 	client := resty.New()
 	robotResp, err := client.R().
 		SetHeader("Content-Type", "application/json").
@@ -154,13 +160,13 @@ func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *Chat
 		SetResult(&respData).
 		Post(fmt.Sprintf("http://%s:9000/api/v1/robot/message/send/longtext", rc.RobotCode))
 	if err != nil {
-		return CallToolResultError(fmt.Sprintf("发送聊天总结失败: %v", err))
+		return utils.CallToolResultError(fmt.Sprintf("发送聊天总结失败: %v", err))
 	}
 	if robotResp.StatusCode() != http.StatusOK {
-		return CallToolResultError(fmt.Sprintf("发送聊天总结失败，返回状态码不是 200: %d", robotResp.StatusCode()))
+		return utils.CallToolResultError(fmt.Sprintf("发送聊天总结失败，返回状态码不是 200: %d", robotResp.StatusCode()))
 	}
 	if respData.Code != 200 {
-		return CallToolResultError(fmt.Sprintf("发送聊天总结失败，返回状态码不是 200: %s", respData.Message))
+		return utils.CallToolResultError(fmt.Sprintf("发送聊天总结失败，返回状态码不是 200: %s", respData.Message))
 	}
 
 	return &mcp.CallToolResult{

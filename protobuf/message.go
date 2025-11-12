@@ -1,4 +1,4 @@
-package main
+package protobuf
 
 type WeChatMessage struct {
 	ModUserInfos    []*UserInfo       `json:"ModUserInfos"`
@@ -190,7 +190,7 @@ type Message struct {
 	ToUserName   SKBuiltinStringT `json:"ToUserName"`
 	Content      SKBuiltinStringT `json:"Content"`
 	CreateTime   int64            `json:"CreateTime"`
-	MsgType      MessageType      `json:"MsgType"`
+	MsgType      string           `json:"MsgType"`
 	Status       int              `json:"Status"`
 	ImgStatus    int              `json:"ImgStatus"`
 	ImgBuf       SKBuiltinBufferT `json:"ImgBuf"`

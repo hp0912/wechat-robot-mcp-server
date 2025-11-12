@@ -1,4 +1,4 @@
-package main
+package middleware
 
 import (
 	"context"
@@ -6,6 +6,9 @@ import (
 	"log"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"wechat-robot-mcp-server/config"
+	"wechat-robot-mcp-server/robot_context"
 )
 
 func TenantMiddleware(next mcp.MethodHandler) mcp.MethodHandler {
@@ -17,13 +20,13 @@ func TenantMiddleware(next mcp.MethodHandler) mcp.MethodHandler {
 		if ctr, ok := req.(*mcp.CallToolRequest); ok {
 			if ctr.Params.Meta != nil {
 				rc := parseRobotContext(ctr.Params.Meta)
-				ctx = WithRobotContext(ctx, rc)
+				ctx = robot_context.WithRobotContext(ctx, rc)
 				if rc.RobotCode != "" {
-					db, err := GetDBByRobotCode(rc.RobotCode)
+					db, err := config.GetDBByRobotCode(rc.RobotCode)
 					if err != nil {
 						log.Printf("获取数据库连接失败(RobotCode:%s): %v", rc.RobotCode, err)
 					} else {
-						ctx = WithDB(ctx, db)
+						ctx = robot_context.WithDB(ctx, db)
 					}
 				}
 			}
@@ -32,8 +35,8 @@ func TenantMiddleware(next mcp.MethodHandler) mcp.MethodHandler {
 	}
 }
 
-func parseRobotContext(meta map[string]any) RobotContext {
-	rc := RobotContext{}
+func parseRobotContext(meta map[string]any) robot_context.RobotContext {
+	rc := robot_context.RobotContext{}
 
 	data, err := json.Marshal(meta)
 	if err != nil {

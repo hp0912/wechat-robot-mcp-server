@@ -1,9 +1,11 @@
-package main
+package webhook
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"wechat-robot-mcp-server/protobuf"
 )
 
 type WeChatMessageResponse struct {
@@ -12,7 +14,7 @@ type WeChatMessageResponse struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-func onWeChatMessages(w http.ResponseWriter, r *http.Request) {
+func OnWeChatMessages(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -25,7 +27,7 @@ func onWeChatMessages(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	var req WeChatMessage
+	var req protobuf.WeChatMessage
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&req); err != nil {

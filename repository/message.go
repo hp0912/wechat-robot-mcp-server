@@ -1,60 +1,32 @@
-package main
+package repository
 
 import (
 	"context"
 
 	"gorm.io/gorm"
+
+	"wechat-robot-mcp-server/model"
 )
 
-type Repository struct {
+type MessageRepository struct {
 	Ctx context.Context
 	DB  *gorm.DB
 }
 
-func NewRepo(ctx context.Context, db *gorm.DB) *Repository {
-	return &Repository{
+type TextMessageItem struct {
+	Nickname  string `json:"nickname"`
+	Message   string `json:"message"`
+	CreatedAt int64  `json:"created_at"`
+}
+
+func NewMessageRepository(ctx context.Context, db *gorm.DB) *MessageRepository {
+	return &MessageRepository{
 		Ctx: ctx,
 		DB:  db,
 	}
 }
 
-func (respo *Repository) GetGlobalSettings() (*GlobalSettings, error) {
-	var globalSettings GlobalSettings
-	err := respo.DB.WithContext(respo.Ctx).First(&globalSettings).Error
-	if err == gorm.ErrRecordNotFound {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &globalSettings, nil
-}
-
-func (respo *Repository) GetChatRoomSettings(chatRoomID string) (*ChatRoomSettings, error) {
-	var chatRoomSettings ChatRoomSettings
-	err := respo.DB.WithContext(respo.Ctx).Where("chat_room_id = ?", chatRoomID).First(&chatRoomSettings).Error
-	if err == gorm.ErrRecordNotFound {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &chatRoomSettings, nil
-}
-
-func (respo *Repository) GetContactByWechatID(wechatID string) (*WeChatContact, error) {
-	var contact WeChatContact
-	err := respo.DB.WithContext(respo.Ctx).Where("wechat_id = ?", wechatID).First(&contact).Error
-	if err == gorm.ErrRecordNotFound {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &contact, nil
-}
-
-func (m *Repository) GetMessagesByTimeRange(self, chatRoomID string, startTime, endTime int64) ([]*TextMessageItem, error) {
+func (respo *MessageRepository) GetMessagesByTimeRange(self, chatRoomID string, startTime, endTime int64) ([]*TextMessageItem, error) {
 	var messages []*TextMessageItem
 	// APP消息类型
 	appMsgList := []string{"57", "4", "5", "6"}
@@ -74,7 +46,7 @@ func (m *Repository) GetMessagesByTimeRange(self, chatRoomID string, startTime, 
 			ELSE EXTRACTVALUE ( messages.content, "/msg/appmsg/des" )
 		END ELSE messages.content
 	END`
-	query := m.DB.WithContext(m.Ctx).Model(&MessageRecord{})
+	query := respo.DB.WithContext(respo.Ctx).Model(&model.Message{})
 	query = query.Select("IF(chat_room_members.remark != '' AND chat_room_members.remark IS NOT NULL, chat_room_members.remark, chat_room_members.nickname) AS nickname", selectStr+" AS message", "messages.created_at").
 		Joins("LEFT JOIN chat_room_members ON chat_room_members.wechat_id = messages.sender_wxid AND chat_room_members.chat_room_id = messages.from_wxid").
 		Where("messages.from_wxid = ?", chatRoomID).

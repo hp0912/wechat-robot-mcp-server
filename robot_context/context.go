@@ -1,4 +1,4 @@
-package main
+package robot_context
 
 import (
 	"context"
