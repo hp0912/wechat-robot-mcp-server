@@ -31,6 +31,7 @@ func main() {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "ChatRoomSummary",
+		Title:       "群聊总结",
 		Description: "微信群聊总结，当用户想总结群聊内容时，可以调用该工具。",
 	}, tools.ChatRoomSummary)
 

@@ -18,7 +18,7 @@ import (
 )
 
 type ChatRoomSummaryInput struct {
-	RecentDuration int `json:"recent_duration" jsonschema:"最近多久的聊天记录，单位是秒，比如用户想总结最近一个小时的聊天记录，则传入3600，如果用户想总结最近一天的聊天记录，则传入86400。你需要根据用户的需求，转换成秒。"`
+	RecentDuration int `json:"recent_duration" jsonschema:"最近多久的聊天记录，比如总结最近一个小时的聊天记录、总结最近一天的聊天记录。你需要根据用户的需求，转换成秒(示例：最近一小时=3600秒，最近一天=86400秒)。"`
 }
 
 func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *ChatRoomSummaryInput) (*mcp.CallToolResult, any, error) {
@@ -158,7 +158,7 @@ func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *Chat
 			"content": replyMsg,
 		}).
 		SetResult(&respData).
-		Post(fmt.Sprintf("http://%s:9000/api/v1/robot/message/send/longtext", rc.RobotCode))
+		Post(fmt.Sprintf("http://%s:%d/api/v1/robot/message/send/longtext", rc.RobotCode, rc.WeChatClientPort))
 	if err != nil {
 		return utils.CallToolResultError(fmt.Sprintf("发送聊天总结失败: %v", err))
 	}
