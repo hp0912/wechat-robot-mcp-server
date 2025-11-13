@@ -8,7 +8,7 @@ import (
 )
 
 type RobotContext struct {
-	WeChatClientPort int
+	WeChatClientPort string
 	RobotID          int64
 	RobotCode        string
 	RobotRedisDB     uint

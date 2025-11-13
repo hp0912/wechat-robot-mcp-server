@@ -158,7 +158,7 @@ func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *Chat
 			"content": replyMsg,
 		}).
 		SetResult(&respData).
-		Post(fmt.Sprintf("http://%s:%d/api/v1/robot/message/send/longtext", rc.RobotCode, rc.WeChatClientPort))
+		Post(fmt.Sprintf("http://%s:%s/api/v1/robot/message/send/longtext", rc.RobotCode, rc.WeChatClientPort))
 	if err != nil {
 		return utils.CallToolResultError(fmt.Sprintf("发送聊天总结失败: %v", err))
 	}
