@@ -18,7 +18,7 @@ import (
 )
 
 type ChatRoomSummaryInput struct {
-	RecentDuration int `json:"recent_duration" jsonschema:"最近多久的聊天记录，比如总结最近一个小时的聊天记录、总结最近一天的聊天记录。你需要根据用户的需求，转换成秒(示例：最近一小时=3600秒，最近一天=86400秒)。"`
+	RecentDuration int `json:"recent_duration" jsonschema:"最近多久的聊天记录，比如总结最近一个小时的聊天记录、总结最近一天的聊天记录。你需要根据用户的需求，转换成秒(示例：最近一小时是3600秒，最近一天是86400秒)。"`
 }
 
 func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *ChatRoomSummaryInput) (*mcp.CallToolResult, any, error) {
