@@ -2,7 +2,7 @@ package webhook
 
 import (
 	"encoding/json"
-	"fmt"
+	"io"
 	"net/http"
 
 	"wechat-robot-mcp-server/protobuf"
@@ -15,36 +15,58 @@ type WeChatMessageResponse struct {
 }
 
 func OnWeChatMessages(w http.ResponseWriter, r *http.Request) {
+	var req protobuf.WeChatMessage
+
+	// 只接受 POST 请求
 	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		_ = json.NewEncoder(w).Encode(WeChatMessageResponse{
-			Code:    500,
-			Message: "method not allowed, use POST",
+			Code:    http.StatusMethodNotAllowed,
+			Message: "method not allowed, only POST is supported",
 		})
 		return
 	}
 
-	defer r.Body.Close()
-
-	var req protobuf.WeChatMessage
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&req); err != nil {
+	// 读取并解析请求体中的 JSON 为结构化的 WeChatMessage
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(WeChatMessageResponse{
-			Code:    500,
-			Message: fmt.Sprintf("解析消息失败: %v", err),
+			Code:    http.StatusBadRequest,
+			Message: "failed to read request body",
+		})
+		return
+	}
+	defer r.Body.Close()
+
+	if len(body) == 0 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(WeChatMessageResponse{
+			Code:    http.StatusBadRequest,
+			Message: "empty request body",
 		})
 		return
 	}
 
-	_ = r.Header.Get("Robot-Code")
-	// 处理消息逻辑 TODO:
+	if err := json.Unmarshal(body, &req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(WeChatMessageResponse{
+			Code:    http.StatusBadRequest,
+			Message: "invalid JSON body",
+		})
+		return
+	}
+
+	// TODO: 在这里继续处理解析后的 req（如入库、业务逻辑等）
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(WeChatMessageResponse{
-		Code: 200,
+		Code:    http.StatusOK,
+		Message: "ok",
 	})
 }
