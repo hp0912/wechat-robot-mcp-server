@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"log"
 	"regexp"
 	"strings"
 
@@ -18,6 +19,8 @@ func NormalizeAIBaseURL(baseURL string) string {
 }
 
 func CallToolResultError(errmsg string) (*mcp.CallToolResult, any, error) {
+	log.Println(errmsg)
+
 	result := &mcp.CallToolResult{}
 	result.IsError = true
 	result.Content = []mcp.Content{
