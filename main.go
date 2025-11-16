@@ -34,6 +34,16 @@ func main() {
 		Title:       "群聊总结",
 		Description: "微信群聊总结，当用户想总结群聊内容时，可以调用该工具。",
 	}, tools.ChatRoomSummary)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "AIDrawing",
+		Title:       "AI文生图",
+		Description: "AI绘图工具，当用户想通过文本生成图像时，可以调用该工具。",
+	}, tools.Drawing)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "ImageRecognition",
+		Title:       "图像识别",
+		Description: "图像识别工具，当用户想知道图片中的内容或者想提取图片中的内容时，假如你自己不具备多模态能力，可以调用该工具。",
+	}, tools.ImageRecognition)
 
 	handler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
 		return server
