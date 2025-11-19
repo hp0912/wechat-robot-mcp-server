@@ -117,7 +117,7 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 	return &mcp.CallToolResult{
 		Content: []mcp.Content{
 			&mcp.TextContent{
-				Text: "歌曲：" + *result.Title + " - " + result.Singer + " 点播成功，希望大家喜欢~",
+				Text: "歌曲：" + *result.Title + " - " + result.Singer + " 点播成功",
 			},
 		},
 	}, nil, nil
