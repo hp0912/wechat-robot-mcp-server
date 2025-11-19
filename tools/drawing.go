@@ -20,7 +20,7 @@ import (
 )
 
 type DrawingInput struct {
-	Prompt         string `json:"prompt" jsonschema:"绘画的提示词，用于生成图像。"`
+	Prompt         string `json:"prompt" jsonschema:"根据用户输入内容，提取出的画图提示词，但是不要对提示词进行修改。"`
 	NegativePrompt string `json:"negative_prompt,omitempty" jsonschema:"用于描述图像中不希望出现的元素或特征的文本，可选。"`
 	Ratio          string `json:"ratio,omitempty" jsonschema:"图像的宽高比，可选，默认16:9。"`
 	Resolution     string `json:"resolution,omitempty" jsonschema:"图像的分辨率，可选，默认2k。"`

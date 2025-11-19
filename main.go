@@ -44,6 +44,11 @@ func main() {
 		Title:       "图像识别",
 		Description: "图像识别工具，当用户想知道图片中的内容或者想提取图片中的内容时，假如你自己不具备多模态能力，可以调用该工具。",
 	}, tools.ImageRecognition)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "RequestSong",
+		Title:       "点歌",
+		Description: "点歌工具，当用户想点播歌曲时，可以调用该工具。",
+	}, tools.RequestSong)
 
 	handler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
 		return server
