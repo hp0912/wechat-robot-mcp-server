@@ -40,6 +40,11 @@ func main() {
 		Description: "AI绘图工具，当用户想通过文本生成图像时，可以调用该工具。",
 	}, tools.Drawing)
 	mcp.AddTool(server, &mcp.Tool{
+		Name:        "AIImage2Image",
+		Title:       "AI图片修改、图生图",
+		Description: "图片修改、编辑、图片合成工具，基于输入的一张或多张图片，结合文本提示词生成新的图片。支持图片混合、风格转换、内容合成等多种创作模式。",
+	}, tools.Image2Image)
+	mcp.AddTool(server, &mcp.Tool{
 		Name:        "ImageRecognition",
 		Title:       "图像识别",
 		Description: "图像识别工具，当用户想知道图片中的内容或者想提取图片中的内容时，假如你自己不具备多模态能力，可以调用该工具。",

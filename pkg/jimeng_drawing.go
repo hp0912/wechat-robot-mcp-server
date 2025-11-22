@@ -11,13 +11,14 @@ import (
 )
 
 type JimengRequest struct {
-	Model          string  `json:"model"`
-	Prompt         string  `json:"prompt"`
-	Ratio          string  `json:"ratio"`
-	Resolution     string  `json:"resolution"`
-	NegativePrompt string  `json:"negative_prompt"`
-	SampleStrength float64 `json:"sample_strength"`
-	ResponseFormat string  `json:"response_format"`
+	Model          string   `json:"model"`
+	Prompt         string   `json:"prompt"`
+	Images         []string `json:"images,omitempty"`
+	Ratio          string   `json:"ratio"`
+	Resolution     string   `json:"resolution"`
+	NegativePrompt string   `json:"negative_prompt"`
+	SampleStrength float64  `json:"sample_strength"`
+	ResponseFormat string   `json:"response_format"`
 }
 
 type JimengConfig struct {
@@ -33,7 +34,7 @@ type JimengResponse struct {
 	} `json:"data"`
 }
 
-func JimengDrawing(config *JimengConfig) ([]*string, error) {
+func JimengGenerations(config *JimengConfig) ([]*string, error) {
 	if config.Prompt == "" {
 		return nil, fmt.Errorf("绘图提示词为空")
 	}
@@ -64,6 +65,80 @@ func JimengDrawing(config *JimengConfig) ([]*string, error) {
 	}
 	// 创建HTTP请求
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/images/generations", config.BaseURL), bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("创建请求失败: %v", err)
+	}
+	// 设置请求头
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+sessionID)
+	// 发送请求
+	client := &http.Client{Timeout: 300 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("发送请求失败: %v", err)
+	}
+	defer resp.Body.Close()
+	// 读取响应
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("读取响应失败: %v", err)
+	}
+	// 检查HTTP状态码
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API请求失败，状态码 %d: %s", resp.StatusCode, string(body))
+	}
+	// 解析响应
+	var jimengResp JimengResponse
+	if err := json.Unmarshal(body, &jimengResp); err != nil {
+		return nil, fmt.Errorf("解析响应失败: %v", err)
+	}
+	// 检查是否有生成的图片
+	if len(jimengResp.Data) == 0 {
+		return nil, fmt.Errorf("未生成任何图片")
+	}
+
+	var urls []*string
+	for _, data := range jimengResp.Data {
+		urls = append(urls, &data.URL)
+	}
+
+	return urls, nil
+}
+
+func JimengCompositions(config *JimengConfig) ([]*string, error) {
+	if config.Prompt == "" {
+		return nil, fmt.Errorf("绘图提示词为空")
+	}
+	if len(config.Images) == 0 {
+		return nil, fmt.Errorf("输入图像列表不能为空")
+	}
+	if len(config.SessionID) == 0 {
+		return nil, fmt.Errorf("未找到绘图密钥")
+	}
+	// 设置默认值
+	if config.Model == "" {
+		config.Model = "jimeng-4.0"
+	}
+	if config.ResponseFormat == "" {
+		config.ResponseFormat = "url"
+	}
+	if config.Ratio == "" {
+		config.Ratio = "16:9"
+	}
+	if config.Resolution == "" {
+		config.Resolution = "2k"
+	}
+	if config.SampleStrength == 0 {
+		config.SampleStrength = 0.5
+	}
+	sessionID := strings.Join(config.SessionID, ",")
+	// 准备请求体
+	requestBody, err := json.Marshal(config.JimengRequest)
+	if err != nil {
+		return nil, fmt.Errorf("序列化请求体失败: %v", err)
+	}
+	// 创建HTTP请求
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/images/compositions", config.BaseURL), bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("创建请求失败: %v", err)
 	}
