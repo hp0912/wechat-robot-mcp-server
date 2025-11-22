@@ -3,14 +3,15 @@ package model
 type ActionType int
 
 const (
-	ActionTypeSendTextMessage     ActionType = 1 // 发送普通文本消息
-	ActionTypeSendLongTextMessage ActionType = 2 // 发送长文本消息
-	ActionTypeSendImageMessage    ActionType = 3 // 发送图片消息
-	ActionTypeSendVideoMessage    ActionType = 4 // 发送视频消息
-	ActionTypeSendAttachMessage   ActionType = 5 // 发送附件消息
-	ActionTypeSendVoiceMessage    ActionType = 6 // 发送语音消息
-	ActionTypeSendAppMessage      ActionType = 7 // 发送应用消息
-	ActionTypeSendEmoticonMessage ActionType = 8 // 发送表情消息
+	ActionTypeSendTextMessage     ActionType = 1   // 发送普通文本消息
+	ActionTypeSendLongTextMessage ActionType = 2   // 发送长文本消息
+	ActionTypeSendImageMessage    ActionType = 3   // 发送图片消息
+	ActionTypeSendVideoMessage    ActionType = 4   // 发送视频消息
+	ActionTypeSendAttachMessage   ActionType = 5   // 发送附件消息
+	ActionTypeSendVoiceMessage    ActionType = 6   // 发送语音消息
+	ActionTypeSendAppMessage      ActionType = 7   // 发送应用消息
+	ActionTypeSendEmoticonMessage ActionType = 8   // 发送表情消息
+	ActionTypeJoinChatRoom        ActionType = 100 // 加入群聊
 )
 
 type CommonOutput struct {
