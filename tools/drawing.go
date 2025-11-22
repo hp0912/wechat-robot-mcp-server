@@ -5,17 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"gorm.io/datatypes"
 
+	"wechat-robot-mcp-server/interface/settings"
 	"wechat-robot-mcp-server/model"
 	"wechat-robot-mcp-server/pkg"
-	"wechat-robot-mcp-server/repository"
 	"wechat-robot-mcp-server/robot_context"
+	"wechat-robot-mcp-server/service"
 	"wechat-robot-mcp-server/utils"
 )
 
@@ -26,7 +24,7 @@ type DrawingInput struct {
 	Resolution     string `json:"resolution,omitempty" jsonschema:"图像的分辨率，可选，默认2k。"`
 }
 
-func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput) (*mcp.CallToolResult, any, error) {
+func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
 	rc, ok := robot_context.GetRobotContext(ctx)
 	if !ok {
 		return utils.CallToolResultError("获取机器人上下文失败")
@@ -37,62 +35,33 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		return utils.CallToolResultError("获取数据库连接失败")
 	}
 
-	var isDrawingEnabled bool
-	var imageModel model.ImageModel = model.ImageModelJimeng
-	var imageAISettings datatypes.JSON
+	var settings settings.Settings
+	var err error
 	var imageURLs []*string
 
-	globalSettingsRepo := repository.NewGlobalSettingsRepository(ctx, db)
-	globalSettings, err := globalSettingsRepo.GetGlobalSettings()
-	if err != nil {
-		return utils.CallToolResultError("获取全局设置失败")
-	}
-
 	if strings.HasSuffix(rc.FromWxID, "@chatroom") {
-		chatRoomSettingsRepo := repository.NewChatRoomSettingsRepository(ctx, db)
-		chatRoomSettings, err := chatRoomSettingsRepo.GetChatRoomSettings(rc.FromWxID)
-		if err != nil {
-			return utils.CallToolResultError("获取群聊设置失败")
-		}
-		if chatRoomSettings != nil && chatRoomSettings.ImageAIEnabled != nil {
-			isDrawingEnabled = *chatRoomSettings.ImageAIEnabled
-			if chatRoomSettings.ImageModel != nil {
-				imageModel = *chatRoomSettings.ImageModel
-			}
-			imageAISettings = chatRoomSettings.ImageAISettings
-		} else if globalSettings != nil && globalSettings.ImageAIEnabled != nil {
-			isDrawingEnabled = *globalSettings.ImageAIEnabled
-			imageModel = globalSettings.ImageModel
-			imageAISettings = globalSettings.ImageAISettings
-		}
+		settings = service.NewChatRoomSettingsService(ctx, db)
 	} else {
-		friendSettingsRepo := repository.NewFriendSettingsRepo(ctx, db)
-		friendSettings, err := friendSettingsRepo.GetFriendSettings(rc.FromWxID)
-		if err != nil {
-			return utils.CallToolResultError("获取好友设置失败")
-		}
-		if friendSettings != nil && friendSettings.ImageAIEnabled != nil {
-			isDrawingEnabled = *friendSettings.ImageAIEnabled
-			if friendSettings.ImageModel != nil {
-				imageModel = *friendSettings.ImageModel
-			}
-			imageAISettings = friendSettings.ImageAISettings
-		} else if globalSettings != nil && globalSettings.ImageAIEnabled != nil {
-			isDrawingEnabled = *globalSettings.ImageAIEnabled
-			imageModel = globalSettings.ImageModel
-			imageAISettings = globalSettings.ImageAISettings
-		}
+		settings = service.NewFriendSettingsService(ctx, db)
+	}
+	err = settings.InitByMessage(&model.Message{
+		FromWxID: rc.FromWxID,
+	})
+	if err != nil {
+		return utils.CallToolResultError(fmt.Sprintf("初始化 AI 设置失败: %v", err))
 	}
 
-	if !isDrawingEnabled {
-		return utils.CallToolResultError("绘图功能未启用")
+	if !settings.IsAIDrawingEnabled() {
+		return utils.CallToolResultError("AI 绘图未开启")
 	}
 
-	switch imageModel {
+	aiConfig := settings.GetAIConfig()
+
+	switch aiConfig.ImageModel {
 	case model.ImageModelDoubao:
 		// Handle 豆包模型
 		var doubaoConfig pkg.DoubaoConfig
-		if err := json.Unmarshal(imageAISettings, &doubaoConfig); err != nil {
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &doubaoConfig); err != nil {
 			errmsg := fmt.Sprintf("反序列化豆包绘图配置失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
@@ -107,7 +76,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 	case model.ImageModelJimeng:
 		// Handle 即梦模型
 		var jimengConfig pkg.JimengConfig
-		if err := json.Unmarshal(imageAISettings, &jimengConfig); err != nil {
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &jimengConfig); err != nil {
 			errmsg := fmt.Sprintf("反序列化即梦绘图配置失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
@@ -132,7 +101,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 	case model.ImageModelGLM:
 		// Handle 智谱模型
 		var glmConfig pkg.GLMConfig
-		if err := json.Unmarshal(imageAISettings, &glmConfig); err != nil {
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &glmConfig); err != nil {
 			errmsg := fmt.Sprintf("反序列化智谱绘图配置失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
@@ -147,7 +116,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 	case model.ImageModelHunyuan:
 		// Handle 混元模型
 		var hunyuanConfig pkg.HunyuanConfig
-		if err := json.Unmarshal(imageAISettings, &hunyuanConfig); err != nil {
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &hunyuanConfig); err != nil {
 			errmsg := fmt.Sprintf("反序列化混元绘图配置失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
@@ -178,31 +147,22 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		return utils.CallToolResultError(errmsg)
 	}
 
-	var respData model.BaseResponse
-	client := resty.New()
-	robotResp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(map[string]any{
-			"to_wxid":    rc.FromWxID,
-			"image_urls": imageURLs,
-		}).
-		SetResult(&respData).
-		Post(fmt.Sprintf("http://client_%s:%s/api/v1/robot/message/send/image/url", rc.RobotCode, rc.WeChatClientPort))
-	if err != nil {
-		return utils.CallToolResultError(fmt.Sprintf("发送图片失败: %v", err))
-	}
-	if robotResp.StatusCode() != http.StatusOK {
-		return utils.CallToolResultError(fmt.Sprintf("发送图片失败，返回状态码不是 200: %d", robotResp.StatusCode()))
-	}
-	if respData.Code != 200 {
-		return utils.CallToolResultError(fmt.Sprintf("发送图片失败，返回状态码不是 200: %s", respData.Message))
+	var attachmentURLList []string
+	for _, url := range imageURLs {
+		if url != nil {
+			attachmentURLList = append(attachmentURLList, *url)
+		}
 	}
 
 	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			&mcp.TextContent{
-				Text: "绘图结果已发送，你喜欢吗？",
+			Content: []mcp.Content{
+				&mcp.TextContent{
+					Text: "绘图成功",
+				},
 			},
-		},
-	}, nil, nil
+		}, &model.CommonOutput{
+			IsCallToolResult:  true,
+			ActionType:        model.ActionTypeSendImageMessage,
+			AttachmentURLList: attachmentURLList,
+		}, nil
 }

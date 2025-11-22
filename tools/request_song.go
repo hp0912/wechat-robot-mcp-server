@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
-	"net/http"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"wechat-robot-mcp-server/model"
 	"wechat-robot-mcp-server/protobuf"
-	"wechat-robot-mcp-server/robot_context"
 	"wechat-robot-mcp-server/utils"
 )
 
@@ -35,12 +33,7 @@ type MusicSearchData struct {
 	Lrc      *string `json:"lrc"`
 }
 
-func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestSongInput) (*mcp.CallToolResult, any, error) {
-	rc, ok := robot_context.GetRobotContext(ctx)
-	if !ok {
-		return utils.CallToolResultError("获取机器人上下文失败")
-	}
-
+func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestSongInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
 	var resp MusicSearchResponse
 	_, err := resty.New().R().
 		SetHeader("Content-Type", "application/json").
@@ -93,32 +86,16 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 		return utils.CallToolResultError(fmt.Sprintf("序列化歌曲失败: %v", err))
 	}
 
-	var respData model.BaseResponse
-	client := resty.New()
-	robotResp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(map[string]any{
-			"to_wxid": rc.FromWxID,
-			"type":    3,
-			"xml":     string(xmlBytes),
-		}).
-		SetResult(&respData).
-		Post(fmt.Sprintf("http://client_%s:%s/api/v1/robot/message/send/app", rc.RobotCode, rc.WeChatClientPort))
-	if err != nil {
-		return utils.CallToolResultError(fmt.Sprintf("发送歌曲失败: %v", err))
-	}
-	if robotResp.StatusCode() != http.StatusOK {
-		return utils.CallToolResultError(fmt.Sprintf("发送歌曲失败，返回状态码不是 200: %d", robotResp.StatusCode()))
-	}
-	if respData.Code != 200 {
-		return utils.CallToolResultError(fmt.Sprintf("发送歌曲失败，返回状态码不是 200: %s", respData.Message))
-	}
-
 	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			&mcp.TextContent{
-				Text: "歌曲：" + *result.Title + " - " + result.Singer + " 点播成功",
+			Content: []mcp.Content{
+				&mcp.TextContent{
+					Text: "点播成功",
+				},
 			},
-		},
-	}, nil, nil
+		}, &model.CommonOutput{
+			IsCallToolResult: true,
+			ActionType:       model.ActionTypeSendAppMessage,
+			AppType:          3,
+			AppXML:           string(xmlBytes),
+		}, nil
 }

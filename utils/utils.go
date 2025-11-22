@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"wechat-robot-mcp-server/model"
 )
 
 // NormalizeAIBaseURL 规范化AI BaseURL，确保以/v+数字结尾，如果没有则添加/v1
@@ -18,7 +20,7 @@ func NormalizeAIBaseURL(baseURL string) string {
 	return baseURL
 }
 
-func CallToolResultError(errmsg string) (*mcp.CallToolResult, any, error) {
+func CallToolResultError(errmsg string) (*mcp.CallToolResult, *model.CommonOutput, error) {
 	log.Println(errmsg)
 
 	result := &mcp.CallToolResult{}

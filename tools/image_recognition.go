@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"wechat-robot-mcp-server/repository"
-	"wechat-robot-mcp-server/robot_context"
-	"wechat-robot-mcp-server/utils"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/sashabaranov/go-openai"
+
+	"wechat-robot-mcp-server/interface/settings"
+	"wechat-robot-mcp-server/model"
+	"wechat-robot-mcp-server/robot_context"
+	"wechat-robot-mcp-server/service"
+	"wechat-robot-mcp-server/utils"
 )
 
 type ImageRecognitionInput struct {
@@ -17,7 +20,7 @@ type ImageRecognitionInput struct {
 	ImageURL string `json:"image_url" jsonschema:"图片的URL地址。"`
 }
 
-func ImageRecognition(ctx context.Context, req *mcp.CallToolRequest, params *ImageRecognitionInput) (*mcp.CallToolResult, any, error) {
+func ImageRecognition(ctx context.Context, req *mcp.CallToolRequest, params *ImageRecognitionInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
 	rc, ok := robot_context.GetRobotContext(ctx)
 	if !ok {
 		return utils.CallToolResultError("获取机器人上下文失败")
@@ -28,66 +31,32 @@ func ImageRecognition(ctx context.Context, req *mcp.CallToolRequest, params *Ima
 		return utils.CallToolResultError("获取数据库连接失败")
 	}
 
-	var aiModel string
-	var aiApiKey string
-	var aiApiBaseURL string
-
-	globalSettingsRepo := repository.NewGlobalSettingsRepository(ctx, db)
-	globalSettings, err := globalSettingsRepo.GetGlobalSettings()
-	if err != nil {
-		return utils.CallToolResultError("获取全局设置失败")
-	}
+	var settings settings.Settings
+	var err error
 
 	if strings.HasSuffix(rc.FromWxID, "@chatroom") {
-		chatRoomSettingsRepo := repository.NewChatRoomSettingsRepository(ctx, db)
-		chatRoomSettings, err := chatRoomSettingsRepo.GetChatRoomSettings(rc.FromWxID)
-		if err != nil {
-			return utils.CallToolResultError("获取群聊设置失败")
-		}
-		if chatRoomSettings != nil {
-			if chatRoomSettings.ChatAPIKey != nil {
-				aiApiKey = *chatRoomSettings.ChatAPIKey
-			}
-			if chatRoomSettings.ChatBaseURL != nil {
-				aiApiBaseURL = *chatRoomSettings.ChatBaseURL
-			}
-			if chatRoomSettings.ImageRecognitionModel != nil {
-				aiModel = *chatRoomSettings.ImageRecognitionModel
-			}
-		} else if globalSettings != nil {
-			aiApiKey = globalSettings.ChatAPIKey
-			aiApiBaseURL = globalSettings.ChatBaseURL
-			aiModel = globalSettings.ImageRecognitionModel
-		}
+		settings = service.NewChatRoomSettingsService(ctx, db)
 	} else {
-		friendSettingsRepo := repository.NewFriendSettingsRepo(ctx, db)
-		friendSettings, err := friendSettingsRepo.GetFriendSettings(rc.FromWxID)
-		if err != nil {
-			return utils.CallToolResultError("获取好友设置失败")
-		}
-		if friendSettings != nil {
-			if friendSettings.ChatAPIKey != nil {
-				aiApiKey = *friendSettings.ChatAPIKey
-			}
-			if friendSettings.ChatBaseURL != nil {
-				aiApiBaseURL = *friendSettings.ChatBaseURL
-			}
-			if friendSettings.ImageRecognitionModel != nil {
-				aiModel = *friendSettings.ImageRecognitionModel
-			}
-		} else if globalSettings != nil {
-			aiApiKey = globalSettings.ChatAPIKey
-			aiApiBaseURL = globalSettings.ChatBaseURL
-			aiModel = globalSettings.ImageRecognitionModel
-		}
+		settings = service.NewFriendSettingsService(ctx, db)
 	}
+	err = settings.InitByMessage(&model.Message{
+		FromWxID: rc.FromWxID,
+	})
+	if err != nil {
+		return utils.CallToolResultError(fmt.Sprintf("初始化 AI 设置失败: %v", err))
+	}
+
+	aiConf := settings.GetAIConfig()
+	aiApiKey := aiConf.APIKey
+	aiApiBaseURL := aiConf.BaseURL
+	aiModel := aiConf.ImageRecognitionModel
 
 	if aiApiBaseURL == "" || aiApiKey == "" || aiModel == "" {
 		return utils.CallToolResultError("AI图片识别未配置，请联系管理员进行配置")
 	}
 
 	aiConfig := openai.DefaultConfig(aiApiKey)
-	aiConfig.BaseURL = utils.NormalizeAIBaseURL(strings.TrimRight(aiApiBaseURL, "/"))
+	aiConfig.BaseURL = aiApiBaseURL
 	ai := openai.NewClientWithConfig(aiConfig)
 	var resp openai.ChatCompletionResponse
 	resp, err = ai.CreateChatCompletion(
@@ -120,10 +89,14 @@ func ImageRecognition(ctx context.Context, req *mcp.CallToolRequest, params *Ima
 	}
 
 	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			&mcp.TextContent{
-				Text: resp.Choices[0].Message.Content,
+			Content: []mcp.Content{
+				&mcp.TextContent{
+					Text: resp.Choices[0].Message.Content,
+				},
 			},
-		},
-	}, nil, nil
+		}, &model.CommonOutput{
+			IsCallToolResult: true,
+			ActionType:       model.ActionTypeSendTextMessage,
+			Text:             resp.Choices[0].Message.Content,
+		}, nil
 }
