@@ -114,6 +114,13 @@ func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *Chat
 	}
 
 	settings := service.NewChatRoomSettingsService(context.Background(), db)
+	err = settings.InitByMessage(&model.Message{
+		FromWxID: rc.FromWxID,
+	})
+	if err != nil {
+		return utils.CallToolResultError(fmt.Sprintf("初始化群聊设置失败: %v", err))
+	}
+
 	aiConf := settings.GetAIConfig()
 
 	aiConfig := openai.DefaultConfig(aiConf.APIKey)

@@ -94,7 +94,7 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 			},
 		}, &model.CommonOutput{
 			IsCallToolResult: true,
-			ActionType:       model.ActionTypeSentAppMessage,
+			ActionType:       model.ActionTypeSendAppMessage,
 			AppType:          3,
 			AppXML:           string(xmlBytes),
 		}, nil

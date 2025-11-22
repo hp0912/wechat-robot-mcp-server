@@ -49,6 +49,11 @@ func main() {
 		Title:       "点歌",
 		Description: "点歌工具，当用户想点播歌曲时，可以调用该工具。",
 	}, tools.RequestSong)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "TTS",
+		Title:       "文本转语音",
+		Description: "文本转语音工具，当用户想让你说话、发语音时，或者想将文本内容转换成语音消息时，可以调用该工具。",
+	}, tools.TTS)
 
 	handler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
 		return server

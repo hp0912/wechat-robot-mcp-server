@@ -39,6 +39,12 @@ func ImageRecognition(ctx context.Context, req *mcp.CallToolRequest, params *Ima
 	} else {
 		settings = service.NewFriendSettingsService(ctx, db)
 	}
+	err = settings.InitByMessage(&model.Message{
+		FromWxID: rc.FromWxID,
+	})
+	if err != nil {
+		return utils.CallToolResultError(fmt.Sprintf("初始化 AI 设置失败: %v", err))
+	}
 
 	aiConf := settings.GetAIConfig()
 	aiApiKey := aiConf.APIKey

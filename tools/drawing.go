@@ -44,6 +44,12 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 	} else {
 		settings = service.NewFriendSettingsService(ctx, db)
 	}
+	err = settings.InitByMessage(&model.Message{
+		FromWxID: rc.FromWxID,
+	})
+	if err != nil {
+		return utils.CallToolResultError(fmt.Sprintf("初始化 AI 设置失败: %v", err))
+	}
 
 	if !settings.IsAIDrawingEnabled() {
 		return utils.CallToolResultError("AI 绘图未开启")
@@ -156,7 +162,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 			},
 		}, &model.CommonOutput{
 			IsCallToolResult:  true,
-			ActionType:        model.ActionTypeSentImageMessage,
+			ActionType:        model.ActionTypeSendImageMessage,
 			AttachmentURLList: attachmentURLList,
 		}, nil
 }
