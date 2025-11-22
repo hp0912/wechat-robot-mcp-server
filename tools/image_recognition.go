@@ -16,7 +16,7 @@ import (
 )
 
 type ImageRecognitionInput struct {
-	Prompt   string `json:"prompt" jsonschema:"图像识别提示词，用户想对图片做什么处理。"`
+	Prompt   string `json:"prompt" jsonschema:"图像识别提示词，用户想从图片中得到什么信息。"`
 	ImageURL string `json:"image_url" jsonschema:"图片的URL地址。"`
 }
 
