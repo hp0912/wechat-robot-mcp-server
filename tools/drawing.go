@@ -8,12 +8,12 @@ import (
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"gorm.io/datatypes"
 
+	"wechat-robot-mcp-server/interface/settings"
 	"wechat-robot-mcp-server/model"
 	"wechat-robot-mcp-server/pkg"
-	"wechat-robot-mcp-server/repository"
 	"wechat-robot-mcp-server/robot_context"
+	"wechat-robot-mcp-server/service"
 	"wechat-robot-mcp-server/utils"
 )
 
@@ -35,62 +35,27 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		return utils.CallToolResultError("获取数据库连接失败")
 	}
 
-	var isDrawingEnabled bool
-	var imageModel model.ImageModel = model.ImageModelJimeng
-	var imageAISettings datatypes.JSON
+	var settings settings.Settings
+	var err error
 	var imageURLs []*string
 
-	globalSettingsRepo := repository.NewGlobalSettingsRepository(ctx, db)
-	globalSettings, err := globalSettingsRepo.GetGlobalSettings()
-	if err != nil {
-		return utils.CallToolResultError("获取全局设置失败")
-	}
-
 	if strings.HasSuffix(rc.FromWxID, "@chatroom") {
-		chatRoomSettingsRepo := repository.NewChatRoomSettingsRepository(ctx, db)
-		chatRoomSettings, err := chatRoomSettingsRepo.GetChatRoomSettings(rc.FromWxID)
-		if err != nil {
-			return utils.CallToolResultError("获取群聊设置失败")
-		}
-		if chatRoomSettings != nil && chatRoomSettings.ImageAIEnabled != nil {
-			isDrawingEnabled = *chatRoomSettings.ImageAIEnabled
-			if chatRoomSettings.ImageModel != nil {
-				imageModel = *chatRoomSettings.ImageModel
-			}
-			imageAISettings = chatRoomSettings.ImageAISettings
-		} else if globalSettings != nil && globalSettings.ImageAIEnabled != nil {
-			isDrawingEnabled = *globalSettings.ImageAIEnabled
-			imageModel = globalSettings.ImageModel
-			imageAISettings = globalSettings.ImageAISettings
-		}
+		settings = service.NewChatRoomSettingsService(ctx, db)
 	} else {
-		friendSettingsRepo := repository.NewFriendSettingsRepo(ctx, db)
-		friendSettings, err := friendSettingsRepo.GetFriendSettings(rc.FromWxID)
-		if err != nil {
-			return utils.CallToolResultError("获取好友设置失败")
-		}
-		if friendSettings != nil && friendSettings.ImageAIEnabled != nil {
-			isDrawingEnabled = *friendSettings.ImageAIEnabled
-			if friendSettings.ImageModel != nil {
-				imageModel = *friendSettings.ImageModel
-			}
-			imageAISettings = friendSettings.ImageAISettings
-		} else if globalSettings != nil && globalSettings.ImageAIEnabled != nil {
-			isDrawingEnabled = *globalSettings.ImageAIEnabled
-			imageModel = globalSettings.ImageModel
-			imageAISettings = globalSettings.ImageAISettings
-		}
+		settings = service.NewFriendSettingsService(ctx, db)
 	}
 
-	if !isDrawingEnabled {
-		return utils.CallToolResultError("绘图功能未启用")
+	if !settings.IsAIDrawingEnabled() {
+		return utils.CallToolResultError("AI 绘图未开启")
 	}
 
-	switch imageModel {
+	aiConfig := settings.GetAIConfig()
+
+	switch aiConfig.ImageModel {
 	case model.ImageModelDoubao:
 		// Handle 豆包模型
 		var doubaoConfig pkg.DoubaoConfig
-		if err := json.Unmarshal(imageAISettings, &doubaoConfig); err != nil {
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &doubaoConfig); err != nil {
 			errmsg := fmt.Sprintf("反序列化豆包绘图配置失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
@@ -105,7 +70,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 	case model.ImageModelJimeng:
 		// Handle 即梦模型
 		var jimengConfig pkg.JimengConfig
-		if err := json.Unmarshal(imageAISettings, &jimengConfig); err != nil {
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &jimengConfig); err != nil {
 			errmsg := fmt.Sprintf("反序列化即梦绘图配置失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
@@ -130,7 +95,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 	case model.ImageModelGLM:
 		// Handle 智谱模型
 		var glmConfig pkg.GLMConfig
-		if err := json.Unmarshal(imageAISettings, &glmConfig); err != nil {
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &glmConfig); err != nil {
 			errmsg := fmt.Sprintf("反序列化智谱绘图配置失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
@@ -145,7 +110,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 	case model.ImageModelHunyuan:
 		// Handle 混元模型
 		var hunyuanConfig pkg.HunyuanConfig
-		if err := json.Unmarshal(imageAISettings, &hunyuanConfig); err != nil {
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &hunyuanConfig); err != nil {
 			errmsg := fmt.Sprintf("反序列化混元绘图配置失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)

@@ -12,6 +12,7 @@ import (
 	"wechat-robot-mcp-server/model"
 	"wechat-robot-mcp-server/repository"
 	"wechat-robot-mcp-server/robot_context"
+	"wechat-robot-mcp-server/service"
 	"wechat-robot-mcp-server/utils"
 )
 
@@ -112,17 +113,11 @@ func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *Chat
 		},
 	}
 
-	// 默认使用AI回复
-	aiApiKey := globalSettings.ChatAPIKey
-	if *chatRoomSettings.ChatAPIKey != "" {
-		aiApiKey = *chatRoomSettings.ChatAPIKey
-	}
-	aiConfig := openai.DefaultConfig(aiApiKey)
-	aiApiBaseURL := strings.TrimRight(globalSettings.ChatBaseURL, "/")
-	if chatRoomSettings.ChatBaseURL != nil && *chatRoomSettings.ChatBaseURL != "" {
-		aiApiBaseURL = strings.TrimRight(*chatRoomSettings.ChatBaseURL, "/")
-	}
-	aiConfig.BaseURL = utils.NormalizeAIBaseURL(aiApiBaseURL)
+	settings := service.NewChatRoomSettingsService(context.Background(), db)
+	aiConf := settings.GetAIConfig()
+
+	aiConfig := openai.DefaultConfig(aiConf.APIKey)
+	aiConfig.BaseURL = aiConf.BaseURL
 	AIModel := globalSettings.ChatRoomSummaryModel
 	if chatRoomSettings.ChatRoomSummaryModel != nil && *chatRoomSettings.ChatRoomSummaryModel != "" {
 		AIModel = *chatRoomSettings.ChatRoomSummaryModel
