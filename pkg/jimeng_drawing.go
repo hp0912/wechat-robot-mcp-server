@@ -18,8 +18,8 @@ type JimengRequest struct {
 	Resolution     string    `json:"resolution"`
 	Duration       *int      `json:"duration,omitempty"`
 	FilePaths      []*string `json:"file_paths,omitempty"`
-	NegativePrompt *string   `json:"negative_prompt"`
-	SampleStrength *float64  `json:"sample_strength"`
+	NegativePrompt *string   `json:"negative_prompt,omitempty"`
+	SampleStrength *float64  `json:"sample_strength,omitempty"`
 	ResponseFormat string    `json:"response_format"`
 }
 
