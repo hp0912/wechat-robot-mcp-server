@@ -83,7 +83,7 @@ func Image2Image(ctx context.Context, req *mcp.CallToolRequest, params *Image2Im
 		}
 		jimengConfig.Resolution = params.Resolution
 		jimengConfig.ResponseFormat = "url"
-		imageURLs, err = pkg.JimengCompositions(&jimengConfig)
+		imageURLs, err = pkg.JimengImageCompositions(&jimengConfig)
 		if err != nil {
 			errmsg := fmt.Sprintf("调用即梦绘图接口失败: %v", err)
 			log.Print(errmsg)
