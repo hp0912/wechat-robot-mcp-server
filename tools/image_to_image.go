@@ -18,11 +18,11 @@ import (
 )
 
 type Image2ImageInput struct {
-	Prompt         string   `json:"prompt" jsonschema:"根据用户输入的文本内容，提取出图片混合、风格转换、内容合成等等的提示词，但是不要对提示词进行修改。"`
-	Images         []string `json:"images" jsonschema:"用于t图片编辑、图片混合、风格转换、内容合成等等的图片链接列表，至少需要一张图像。"`
-	NegativePrompt string   `json:"negative_prompt,omitempty" jsonschema:"用于描述图像中不希望出现的元素或特征的文本，可选。"`
-	Ratio          string   `json:"ratio,omitempty" jsonschema:"图像的宽高比，可选，默认16:9。"`
-	Resolution     string   `json:"resolution,omitempty" jsonschema:"图像的分辨率，可选，默认2k。"`
+	Prompt         string    `json:"prompt" jsonschema:"根据用户输入的文本内容，提取出图片混合、风格转换、内容合成等等的提示词，但是不要对提示词进行修改。"`
+	Images         []*string `json:"images" jsonschema:"用于t图片编辑、图片混合、风格转换、内容合成等等的图片链接列表，至少需要一张图像。"`
+	NegativePrompt *string   `json:"negative_prompt,omitempty" jsonschema:"用于描述图像中不希望出现的元素或特征的文本，可选。"`
+	Ratio          string    `json:"ratio,omitempty" jsonschema:"图像的宽高比，可选，默认16:9。"`
+	Resolution     string    `json:"resolution,omitempty" jsonschema:"图像的分辨率，可选，默认2k。"`
 }
 
 func Image2Image(ctx context.Context, req *mcp.CallToolRequest, params *Image2ImageInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
