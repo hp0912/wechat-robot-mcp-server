@@ -36,14 +36,19 @@ func main() {
 	}, tools.ChatRoomSummary)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "AIDrawing",
-		Title:       "AI文生图",
+		Title:       "文生图",
 		Description: "AI绘图工具，当用户想通过文本生成图像时，可以调用该工具。",
 	}, tools.Drawing)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "AIImage2Image",
-		Title:       "AI图片修改、图生图",
+		Title:       "图片修改、图生图",
 		Description: "图片修改、编辑、图片合成工具，基于输入的一张或多张图片，结合文本提示词生成新的图片。支持图片混合、风格转换、内容合成等多种创作模式。输入是文字或图片或两者的组合，输出是图片。",
 	}, tools.Image2Image)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "AIVideoGeneration",
+		Title:       "视频生成",
+		Description: "生成一段视频，支持三种模式：1. 纯文本提示词，不使用任何图片。2. 使用单张图片作为首帧。3. 使用两张图片分别作为首帧和尾帧。",
+	}, tools.Image2Video)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "ImageRecognition",
 		Title:       "图像识别",
