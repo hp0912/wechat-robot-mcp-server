@@ -133,7 +133,7 @@ func Image2Video(ctx context.Context, req *mcp.CallToolRequest, params *Image2Vi
 			},
 		}, &model.CommonOutput{
 			IsCallToolResult:  true,
-			ActionType:        model.ActionTypeSendImageMessage,
+			ActionType:        model.ActionTypeSendVideoMessage,
 			AttachmentURLList: attachmentURLList,
 		}, nil
 }
