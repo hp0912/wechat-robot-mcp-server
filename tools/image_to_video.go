@@ -18,11 +18,11 @@ import (
 )
 
 type Image2VideoInput struct {
-	Prompt     string    `json:"prompt" jsonschema:"根据用户输入的文本内容，提取出“生成视频”的提示词，但是不要对提示词进行修改。"`
-	FilePaths  []*string `json:"file_paths,omitempty" jsonschema:"用于视频的首尾帧的图片地址列表，可选。不提供则表示通过文本生成视频。"`
-	Ratio      string    `json:"ratio,omitempty" jsonschema:"生成视频比例，可选。"`
-	Resolution string    `json:"resolution,omitempty" jsonschema:"生成视频分辨率，可选。"`
-	Duration   *int      `json:"duration,omitempty" jsonschema:"生成视频时长，单位秒，可选。"`
+	Prompt     string   `json:"prompt" jsonschema:"根据用户输入的文本内容，提取出“生成视频”的提示词，但是不要对提示词进行修改。"`
+	FilePaths  []string `json:"file_paths,omitempty" jsonschema:"用于视频的首尾帧的图片地址列表，可选。不提供则表示通过文本生成视频。"`
+	Ratio      string   `json:"ratio,omitempty" jsonschema:"生成视频比例，可选。"`
+	Resolution string   `json:"resolution,omitempty" jsonschema:"生成视频分辨率，可选。"`
+	Duration   int      `json:"duration,omitempty" jsonschema:"生成视频时长，单位秒，可选。"`
 }
 
 func Image2Video(ctx context.Context, req *mcp.CallToolRequest, params *Image2VideoInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
@@ -73,7 +73,14 @@ func Image2Video(ctx context.Context, req *mcp.CallToolRequest, params *Image2Vi
 		}
 
 		jimengConfig.Prompt = params.Prompt
-		jimengConfig.FilePaths = params.FilePaths
+
+		var filePaths []*string
+		for _, path := range params.FilePaths {
+			p := path
+			filePaths = append(filePaths, &p)
+		}
+		jimengConfig.FilePaths = filePaths
+
 		if params.Ratio == "" {
 			params.Ratio = "4:3"
 		}
@@ -82,8 +89,7 @@ func Image2Video(ctx context.Context, req *mcp.CallToolRequest, params *Image2Vi
 		params.Resolution = "720p"
 		jimengConfig.Resolution = params.Resolution
 		// 节约成本，只生成 5 秒视频
-		duration := 5
-		params.Duration = &duration
+		params.Duration = 5
 		jimengConfig.Duration = params.Duration
 		jimengConfig.ResponseFormat = "url"
 		imageURLs, err = pkg.JimengVideoGenerations(&jimengConfig)
