@@ -18,7 +18,7 @@ import (
 )
 
 type Image2ImageInput struct {
-	Prompt         string   `json:"prompt" jsonschema:"根据用户输入内容，提取出的画图提示词，但是不要对提示词进行修改。"`
+	Prompt         string   `json:"prompt" jsonschema:"根据用户输入的文本内容，提取出图片混合、风格转换、内容合成等等的提示词，但是不要对提示词进行修改。"`
 	Images         []string `json:"images" jsonschema:"用于图像到图像生成的输入图像列表，至少需要一张图像。"`
 	NegativePrompt string   `json:"negative_prompt,omitempty" jsonschema:"用于描述图像中不希望出现的元素或特征的文本，可选。"`
 	Ratio          string   `json:"ratio,omitempty" jsonschema:"图像的宽高比，可选，默认16:9。"`
