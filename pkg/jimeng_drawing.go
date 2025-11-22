@@ -16,10 +16,10 @@ type JimengRequest struct {
 	Images         []*string `json:"images,omitempty"`
 	Ratio          string    `json:"ratio"`
 	Resolution     string    `json:"resolution"`
-	Duration       *int      `json:"duration,omitempty"`
+	Duration       int       `json:"duration,omitempty"`
 	FilePaths      []*string `json:"file_paths,omitempty"`
-	NegativePrompt *string   `json:"negative_prompt,omitempty"`
-	SampleStrength *float64  `json:"sample_strength,omitempty"`
+	NegativePrompt string    `json:"negative_prompt,omitempty"`
+	SampleStrength float64   `json:"sample_strength,omitempty"`
 	ResponseFormat string    `json:"response_format"`
 }
 
@@ -64,8 +64,8 @@ func JimengImageGenerations(config *JimengConfig) ([]*string, error) {
 	if config.Resolution == "" {
 		config.Resolution = "2k"
 	}
-	if config.SampleStrength == nil {
-		config.SampleStrength = floatPtr(0.5)
+	if config.SampleStrength == 0 {
+		config.SampleStrength = 0.5
 	}
 	sessionID := strings.Join(config.SessionID, ",")
 	// 准备请求体
@@ -138,8 +138,8 @@ func JimengImageCompositions(config *JimengConfig) ([]*string, error) {
 	if config.Resolution == "" {
 		config.Resolution = "2k"
 	}
-	if config.SampleStrength == nil {
-		config.SampleStrength = floatPtr(0.5)
+	if config.SampleStrength == 0 {
+		config.SampleStrength = 0.5
 	}
 	sessionID := strings.Join(config.SessionID, ",")
 	// 准备请求体
@@ -209,8 +209,8 @@ func JimengVideoGenerations(config *JimengConfig) ([]*string, error) {
 	if config.Resolution == "" {
 		config.Resolution = "720p"
 	}
-	if config.Duration == nil {
-		config.Duration = intPtr(5)
+	if config.Duration == 0 {
+		config.Duration = 5
 	}
 	sessionID := strings.Join(config.SessionID, ",")
 	// 准备请求体
