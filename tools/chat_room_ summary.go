@@ -3,11 +3,9 @@ package tools
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/sashabaranov/go-openai"
 
@@ -21,7 +19,7 @@ type ChatRoomSummaryInput struct {
 	RecentDuration int `json:"recent_duration" jsonschema:"最近多久的聊天记录，比如总结最近一个小时的聊天记录、总结最近一天的聊天记录。你需要根据用户的需求，转换成秒(示例：最近一小时是3600秒，最近一天是86400秒)。"`
 }
 
-func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *ChatRoomSummaryInput) (*mcp.CallToolResult, any, error) {
+func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *ChatRoomSummaryInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
 	if params.RecentDuration > 24*3600 {
 		return utils.CallToolResultError("最多只能总结最近24小时内的聊天记录")
 	}
@@ -149,31 +147,18 @@ func ChatRoomSummary(ctx context.Context, req *mcp.CallToolRequest, params *Chat
 	}
 
 	replyMsg := fmt.Sprintf("#消息总结\n让我们一起来看看群友们都聊了什么有趣的话题吧~\n\n%s", resp.Choices[0].Message.Content)
-	var respData model.BaseResponse
-	client := resty.New()
-	robotResp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(map[string]string{
-			"to_wxid": rc.FromWxID,
-			"content": replyMsg,
-		}).
-		SetResult(&respData).
-		Post(fmt.Sprintf("http://client_%s:%s/api/v1/robot/message/send/longtext", rc.RobotCode, rc.WeChatClientPort))
-	if err != nil {
-		return utils.CallToolResultError(fmt.Sprintf("发送聊天总结失败: %v", err))
+	resultContent := []mcp.Content{
+		&mcp.TextContent{
+			Text: "总结成功",
+		},
 	}
-	if robotResp.StatusCode() != http.StatusOK {
-		return utils.CallToolResultError(fmt.Sprintf("发送聊天总结失败，返回状态码不是 200: %d", robotResp.StatusCode()))
-	}
-	if respData.Code != 200 {
-		return utils.CallToolResultError(fmt.Sprintf("发送聊天总结失败，返回状态码不是 200: %s", respData.Message))
+	output := &model.CommonOutput{
+		IsCallToolResult: true,
+		ActionType:       model.ActionTypeSendLongTextMessage,
+		Text:             replyMsg,
 	}
 
 	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			&mcp.TextContent{
-				Text: "聊天总结发送成功",
-			},
-		},
-	}, nil, nil
+		Content: resultContent,
+	}, output, nil
 }

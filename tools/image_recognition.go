@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"wechat-robot-mcp-server/repository"
-	"wechat-robot-mcp-server/robot_context"
-	"wechat-robot-mcp-server/utils"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/sashabaranov/go-openai"
+
+	"wechat-robot-mcp-server/model"
+	"wechat-robot-mcp-server/repository"
+	"wechat-robot-mcp-server/robot_context"
+	"wechat-robot-mcp-server/utils"
 )
 
 type ImageRecognitionInput struct {
@@ -17,7 +19,7 @@ type ImageRecognitionInput struct {
 	ImageURL string `json:"image_url" jsonschema:"图片的URL地址。"`
 }
 
-func ImageRecognition(ctx context.Context, req *mcp.CallToolRequest, params *ImageRecognitionInput) (*mcp.CallToolResult, any, error) {
+func ImageRecognition(ctx context.Context, req *mcp.CallToolRequest, params *ImageRecognitionInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
 	rc, ok := robot_context.GetRobotContext(ctx)
 	if !ok {
 		return utils.CallToolResultError("获取机器人上下文失败")
@@ -120,10 +122,14 @@ func ImageRecognition(ctx context.Context, req *mcp.CallToolRequest, params *Ima
 	}
 
 	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			&mcp.TextContent{
-				Text: resp.Choices[0].Message.Content,
+			Content: []mcp.Content{
+				&mcp.TextContent{
+					Text: resp.Choices[0].Message.Content,
+				},
 			},
-		},
-	}, nil, nil
+		}, &model.CommonOutput{
+			IsCallToolResult: true,
+			ActionType:       model.ActionTypeSendTextMessage,
+			Text:             resp.Choices[0].Message.Content,
+		}, nil
 }

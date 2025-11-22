@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"gorm.io/datatypes"
 
@@ -26,7 +24,7 @@ type DrawingInput struct {
 	Resolution     string `json:"resolution,omitempty" jsonschema:"图像的分辨率，可选，默认2k。"`
 }
 
-func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput) (*mcp.CallToolResult, any, error) {
+func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
 	rc, ok := robot_context.GetRobotContext(ctx)
 	if !ok {
 		return utils.CallToolResultError("获取机器人上下文失败")
@@ -178,31 +176,22 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		return utils.CallToolResultError(errmsg)
 	}
 
-	var respData model.BaseResponse
-	client := resty.New()
-	robotResp, err := client.R().
-		SetHeader("Content-Type", "application/json").
-		SetBody(map[string]any{
-			"to_wxid":    rc.FromWxID,
-			"image_urls": imageURLs,
-		}).
-		SetResult(&respData).
-		Post(fmt.Sprintf("http://client_%s:%s/api/v1/robot/message/send/image/url", rc.RobotCode, rc.WeChatClientPort))
-	if err != nil {
-		return utils.CallToolResultError(fmt.Sprintf("发送图片失败: %v", err))
-	}
-	if robotResp.StatusCode() != http.StatusOK {
-		return utils.CallToolResultError(fmt.Sprintf("发送图片失败，返回状态码不是 200: %d", robotResp.StatusCode()))
-	}
-	if respData.Code != 200 {
-		return utils.CallToolResultError(fmt.Sprintf("发送图片失败，返回状态码不是 200: %s", respData.Message))
+	var attachmentURLList []string
+	for _, url := range imageURLs {
+		if url != nil {
+			attachmentURLList = append(attachmentURLList, *url)
+		}
 	}
 
 	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			&mcp.TextContent{
-				Text: "绘图结果已发送，你喜欢吗？",
+			Content: []mcp.Content{
+				&mcp.TextContent{
+					Text: "绘图成功",
+				},
 			},
-		},
-	}, nil, nil
+		}, &model.CommonOutput{
+			IsCallToolResult:  true,
+			ActionType:        model.ActionTypeSentImageMessage,
+			AttachmentURLList: attachmentURLList,
+		}, nil
 }
