@@ -13,13 +13,13 @@ import (
 type JimengRequest struct {
 	Model          string    `json:"model"`
 	Prompt         string    `json:"prompt"`
-	Images         []string  `json:"images,omitempty"`
+	Images         []*string `json:"images,omitempty"`
 	Ratio          string    `json:"ratio"`
 	Resolution     string    `json:"resolution"`
-	Duration       int       `json:"duration,omitempty"`
+	Duration       *int      `json:"duration,omitempty"`
 	FilePaths      []*string `json:"file_paths,omitempty"`
-	NegativePrompt string    `json:"negative_prompt"`
-	SampleStrength float64   `json:"sample_strength"`
+	NegativePrompt *string   `json:"negative_prompt"`
+	SampleStrength *float64  `json:"sample_strength"`
 	ResponseFormat string    `json:"response_format"`
 }
 
@@ -34,6 +34,14 @@ type JimengResponse struct {
 	Data    []struct {
 		URL string `json:"url"`
 	} `json:"data"`
+}
+
+func intPtr(v int) *int {
+	return &v
+}
+
+func floatPtr(v float64) *float64 {
+	return &v
 }
 
 func JimengImageGenerations(config *JimengConfig) ([]*string, error) {
@@ -56,8 +64,8 @@ func JimengImageGenerations(config *JimengConfig) ([]*string, error) {
 	if config.Resolution == "" {
 		config.Resolution = "2k"
 	}
-	if config.SampleStrength == 0 {
-		config.SampleStrength = 0.5
+	if config.SampleStrength == nil {
+		config.SampleStrength = floatPtr(0.5)
 	}
 	sessionID := strings.Join(config.SessionID, ",")
 	// 准备请求体
@@ -130,8 +138,8 @@ func JimengImageCompositions(config *JimengConfig) ([]*string, error) {
 	if config.Resolution == "" {
 		config.Resolution = "2k"
 	}
-	if config.SampleStrength == 0 {
-		config.SampleStrength = 0.5
+	if config.SampleStrength == nil {
+		config.SampleStrength = floatPtr(0.5)
 	}
 	sessionID := strings.Join(config.SessionID, ",")
 	// 准备请求体
@@ -201,8 +209,8 @@ func JimengVideoGenerations(config *JimengConfig) ([]*string, error) {
 	if config.Resolution == "" {
 		config.Resolution = "720p"
 	}
-	if config.Duration == 0 {
-		config.Duration = 5
+	if config.Duration == nil {
+		config.Duration = intPtr(5)
 	}
 	sessionID := strings.Join(config.SessionID, ",")
 	// 准备请求体
