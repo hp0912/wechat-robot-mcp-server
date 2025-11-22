@@ -17,14 +17,15 @@ import (
 	"wechat-robot-mcp-server/utils"
 )
 
-type DrawingInput struct {
-	Prompt         string `json:"prompt" jsonschema:"根据用户输入内容，提取出的画图提示词，但是不要对提示词进行修改。"`
-	NegativePrompt string `json:"negative_prompt,omitempty" jsonschema:"用于描述图像中不希望出现的元素或特征的文本，可选。"`
-	Ratio          string `json:"ratio,omitempty" jsonschema:"图像的宽高比，可选，默认16:9。"`
-	Resolution     string `json:"resolution,omitempty" jsonschema:"图像的分辨率，可选，默认2k。"`
+type Image2ImageInput struct {
+	Prompt         string   `json:"prompt" jsonschema:"根据用户输入内容，提取出的画图提示词，但是不要对提示词进行修改。"`
+	Images         []string `json:"images" jsonschema:"用于图像到图像生成的输入图像列表，至少需要一张图像。"`
+	NegativePrompt string   `json:"negative_prompt,omitempty" jsonschema:"用于描述图像中不希望出现的元素或特征的文本，可选。"`
+	Ratio          string   `json:"ratio,omitempty" jsonschema:"图像的宽高比，可选，默认16:9。"`
+	Resolution     string   `json:"resolution,omitempty" jsonschema:"图像的分辨率，可选，默认2k。"`
 }
 
-func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
+func Image2Image(ctx context.Context, req *mcp.CallToolRequest, params *Image2ImageInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
 	rc, ok := robot_context.GetRobotContext(ctx)
 	if !ok {
 		return utils.CallToolResultError("获取机器人上下文失败")
@@ -60,19 +61,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 	switch aiConfig.ImageModel {
 	case model.ImageModelDoubao:
 		// Handle 豆包模型
-		var doubaoConfig pkg.DoubaoConfig
-		if err := json.Unmarshal(aiConfig.ImageAISettings, &doubaoConfig); err != nil {
-			errmsg := fmt.Sprintf("反序列化豆包绘图配置失败: %v", err)
-			log.Print(errmsg)
-			return utils.CallToolResultError(errmsg)
-		}
-		doubaoConfig.Prompt = params.Prompt
-		imageURLs, err = pkg.DoubaoDrawing(&doubaoConfig)
-		if err != nil {
-			errmsg := fmt.Sprintf("调用豆包绘图接口失败: %v", err)
-			log.Print(errmsg)
-			return utils.CallToolResultError(errmsg)
-		}
+		return utils.CallToolResultError("豆包图生图暂未实现")
 	case model.ImageModelJimeng:
 		// Handle 即梦模型
 		var jimengConfig pkg.JimengConfig
@@ -83,6 +72,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		}
 
 		jimengConfig.Prompt = params.Prompt
+		jimengConfig.Images = params.Images
 		jimengConfig.NegativePrompt = params.NegativePrompt
 		if params.Ratio == "" {
 			params.Ratio = "16:9"
@@ -93,7 +83,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		}
 		jimengConfig.Resolution = params.Resolution
 		jimengConfig.ResponseFormat = "url"
-		imageURLs, err = pkg.JimengGenerations(&jimengConfig)
+		imageURLs, err = pkg.JimengCompositions(&jimengConfig)
 		if err != nil {
 			errmsg := fmt.Sprintf("调用即梦绘图接口失败: %v", err)
 			log.Print(errmsg)
@@ -101,34 +91,8 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		}
 	case model.ImageModelGLM:
 		// Handle 智谱模型
-		var glmConfig pkg.GLMConfig
-		if err := json.Unmarshal(aiConfig.ImageAISettings, &glmConfig); err != nil {
-			errmsg := fmt.Sprintf("反序列化智谱绘图配置失败: %v", err)
-			log.Print(errmsg)
-			return utils.CallToolResultError(errmsg)
-		}
-		glmConfig.Prompt = params.Prompt
-		imageURLs, err = pkg.GLMDrawing(&glmConfig)
-		if err != nil {
-			errmsg := fmt.Sprintf("调用智谱绘图接口失败: %v", err)
-			log.Print(errmsg)
-			return utils.CallToolResultError(errmsg)
-		}
 	case model.ImageModelHunyuan:
 		// Handle 混元模型
-		var hunyuanConfig pkg.HunyuanConfig
-		if err := json.Unmarshal(aiConfig.ImageAISettings, &hunyuanConfig); err != nil {
-			errmsg := fmt.Sprintf("反序列化混元绘图配置失败: %v", err)
-			log.Print(errmsg)
-			return utils.CallToolResultError(errmsg)
-		}
-		hunyuanConfig.Prompt = params.Prompt
-		imageURLs, err = pkg.SubmitHunyuanDrawing(&hunyuanConfig)
-		if err != nil {
-			errmsg := fmt.Sprintf("调用混元绘图接口失败: %v", err)
-			log.Print(errmsg)
-			return utils.CallToolResultError(errmsg)
-		}
 	case model.ImageModelStableDiffusion:
 		// Handle Stable Diffusion 模型
 	case model.ImageModelMidjourney:
