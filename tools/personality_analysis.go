@@ -17,7 +17,8 @@ import (
 )
 
 type PersonalityAnalysisInput struct {
-	RecentDuration int `json:"recent_duration" jsonschema:"最近多久的聊天记录，比如最近一个小时的聊天记录、最近一天的聊天记录。你需要根据用户的需求，转换成秒(示例：最近一小时是3600秒，最近一天是86400秒)。"`
+	RecentDuration int    `json:"recent_duration" jsonschema:"最近多久的聊天记录，比如最近一个小时的聊天记录、最近一天的聊天记录。你需要根据用户的需求，转换成秒(示例：最近一小时是3600秒，最近一天是86400秒)。"`
+	Nickname       string `json:"nickname,omitempty" jsonschema:"需要分析的群成员昵称，可选。"`
 }
 
 func PersonalityAnalysis(ctx context.Context, req *mcp.CallToolRequest, params *PersonalityAnalysisInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
@@ -37,6 +38,7 @@ func PersonalityAnalysis(ctx context.Context, req *mcp.CallToolRequest, params *
 
 	globalSettingsRepo := repository.NewGlobalSettingsRepository(ctx, db)
 	chatRoomSettingsRepo := repository.NewChatRoomSettingsRepository(ctx, db)
+	chatRoomMemberRepo := repository.NewChatRoomMemberRepo(ctx, db)
 	contactRepo := repository.NewContactRepository(ctx, db)
 	messageRepo := repository.NewMessageRepository(ctx, db)
 
@@ -82,7 +84,10 @@ func PersonalityAnalysis(ctx context.Context, req *mcp.CallToolRequest, params *
 		timeStr := time.Unix(message.CreatedAt, 0).Format("2006-01-02 15:04:05")
 		content = append(content, fmt.Sprintf(`[%s] {"%s": "%s"}--end--`, timeStr, message.Nickname, strings.ReplaceAll(message.Message, "\n", "。。")))
 	}
-	prompt := `## 核心目标 (Core Objective)
+	prompt := `
+你现在处于一个在线群聊中，群聊中有多个人在发言。你的任务是根据指定用户的发言内容，分析并推断该用户的 MBTI 性格类型。
+
+## 核心目标 (Core Objective)
 通过深入分析提供的聊天记录内容，运用 MBTI (Myers-Briggs Type Indicator) 理论框架，准确推断指定用户的性格类型，并提供详细的维度分析和依据。
 
 ## 角色与背景 (Role & Context)
@@ -121,7 +126,26 @@ func PersonalityAnalysis(ctx context.Context, req *mcp.CallToolRequest, params *
 *   **语言风格**：保持专业、理性且具有洞察力。
 *   **隐私保护**：分析中不要重复提及敏感的个人身份信息（如真实电话号码、地址等）。`
 
-	msg := fmt.Sprintf("每一行代表一个人的发言，每一行的的格式为： {\"[time] {nickname}\": \"{content}\"}--end--\n\n群名称: %s\n聊天记录如下:\n%s", chatRoomName, strings.Join(content, "\n"))
+	msg := "### 每一行代表一个人的发言，每一行的的格式为： {\"[time] {nickname}\": \"{content}\"}--end--\n"
+
+	if params.Nickname == "" {
+		senders, err := chatRoomMemberRepo.GetChatRoomMemberByWeChatIDs(rc.FromWxID, []string{rc.SenderWxID})
+		if err != nil {
+			return utils.CallToolResultError(fmt.Sprintf("获取群成员信息失败: %v", err))
+		}
+		if len(senders) == 0 {
+			return utils.CallToolResultError("获取群成员信息失败，指定的成员不存在")
+		}
+		if senders[0].Remark != "" {
+			params.Nickname = senders[0].Remark
+		} else {
+			params.Nickname = senders[0].Nickname
+		}
+	}
+
+	msg += fmt.Sprintf("### 着重分析昵称为 '%s' 的群成员的性格类型。\n", params.Nickname)
+	msg += "### 简单分析下所有参与聊天人员的性格类型。\n\n"
+	msg += fmt.Sprintf("群名称: %s\n聊天记录如下:\n%s", chatRoomName, strings.Join(content, "\n"))
 	// AI 分析
 	aiMessages := []openai.ChatCompletionMessage{
 		{
