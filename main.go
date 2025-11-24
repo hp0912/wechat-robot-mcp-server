@@ -35,6 +35,12 @@ func main() {
 		Description: "微信群聊总结，当用户想总结群聊内容时，可以调用该工具。",
 	}, tools.ChatRoomSummary)
 	mcp.AddTool(server, &mcp.Tool{
+		Name:        "PersonalityAnalysis",
+		Title:       "群成员性格分析",
+		Description: "根据群聊历史聊天记录，分析群成员的性格特点。",
+	}, tools.PersonalityAnalysis)
+
+	mcp.AddTool(server, &mcp.Tool{
 		Name:        "AIDrawing",
 		Title:       "文生图",
 		Description: "AI绘图工具，当用户想通过文本生成图像时，可以调用该工具。",
