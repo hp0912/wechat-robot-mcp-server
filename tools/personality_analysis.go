@@ -121,7 +121,7 @@ func PersonalityAnalysis(ctx context.Context, req *mcp.CallToolRequest, params *
 *   **语言风格**：保持专业、理性且具有洞察力。
 *   **隐私保护**：分析中不要重复提及敏感的个人身份信息（如真实电话号码、地址等）。`
 
-	msg := fmt.Sprintf("群名称: %s\n聊天记录如下:\n%s", chatRoomName, strings.Join(content, "\n"))
+	msg := fmt.Sprintf("每一行代表一个人的发言，每一行的的格式为： {\"[time] {nickname}\": \"{content}\"}--end--\n\n群名称: %s\n聊天记录如下:\n%s", chatRoomName, strings.Join(content, "\n"))
 	// AI 分析
 	aiMessages := []openai.ChatCompletionMessage{
 		{
