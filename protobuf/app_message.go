@@ -2,6 +2,11 @@ package protobuf
 
 import "encoding/xml"
 
+type AppMsgWrapper struct {
+	XMLName xml.Name   `xml:"msg"`
+	AppMsg  AppMessage `xml:"appmsg"`
+}
+
 type AppMessage struct {
 	XMLName           xml.Name      `xml:"appmsg"`
 	AppID             string        `xml:"appid,attr"`
@@ -33,11 +38,18 @@ type AppMessage struct {
 }
 
 type AppAttach struct {
-	TotalLen    int    `xml:"totallen"`
-	AttachID    string `xml:"attachid"`
-	EmoticonMD5 string `xml:"emoticonmd5"`
-	FileExt     string `xml:"fileext"`
-	AesKey      string `xml:"aeskey"`
+	TotalLen       int    `xml:"totallen"`
+	AttachID       string `xml:"attachid"`
+	EmoticonMD5    string `xml:"emoticonmd5"`
+	FileExt        string `xml:"fileext"`
+	AesKey         string `xml:"aeskey"`
+	CDNThumbAesKey string `xml:"cdnthumbaeskey,omitempty"`
+	CDNThumbURL    string `xml:"cdnthumburl,omitempty"`
+	CDNThumbLength int    `xml:"cdnthumblength,omitempty"`
+	CDNThumbWidth  int    `xml:"cdnthumbwidth,omitempty"`
+	CDNThumbHeight int    `xml:"cdnthumbheight,omitempty"`
+	CDNThumbMd5    string `xml:"cdnthumbmd5,omitempty"`
+	EmojiInfo      string `xml:"emojiinfo,omitempty"`
 }
 
 type WebViewShared struct {

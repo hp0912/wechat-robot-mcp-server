@@ -12,6 +12,8 @@ const (
 	ActionTypeSendAppMessage      ActionType = 7   // 发送应用消息
 	ActionTypeSendEmoticonMessage ActionType = 8   // 发送表情消息
 	ActionTypeJoinChatRoom        ActionType = 100 // 加入群聊
+	ActionTypeEmojiImage          ActionType = 200 // emoji -> image
+	ActionTypeEmojiGif            ActionType = 201 // emoji -> gif
 )
 
 type CommonOutput struct {

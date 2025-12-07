@@ -26,6 +26,30 @@ func NewMessageRepository(ctx context.Context, db *gorm.DB) *MessageRepository {
 	}
 }
 
+func (m *MessageRepository) GetByID(id int64) (*model.Message, error) {
+	var message model.Message
+	err := m.DB.WithContext(m.Ctx).Where("id = ?", id).First(&message).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &message, nil
+}
+
+func (m *MessageRepository) GetByMsgID(msgId int64) (*model.Message, error) {
+	var message model.Message
+	err := m.DB.WithContext(m.Ctx).Where("msg_id = ?", msgId).First(&message).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &message, nil
+}
+
 func (respo *MessageRepository) GetMessagesByTimeRange(self, chatRoomID string, startTime, endTime int64) ([]*TextMessageItem, error) {
 	var messages []*TextMessageItem
 	// APP消息类型
