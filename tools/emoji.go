@@ -54,7 +54,7 @@ func EmojiTool(ctx context.Context, req *mcp.CallToolRequest, params *EmojiInput
 				},
 			}, &model.CommonOutput{
 				IsCallToolResult: true,
-				ActionType:       model.ActionTypeEmojiImage,
+				ActionType:       model.ActionTypeEmoji,
 				Text:             emojiXml.Emoji.CDNUrl,
 			}, nil
 	}
@@ -89,7 +89,7 @@ func EmojiTool(ctx context.Context, req *mcp.CallToolRequest, params *EmojiInput
 				},
 			}, &model.CommonOutput{
 				IsCallToolResult: true,
-				ActionType:       model.ActionTypeEmojiGif,
+				ActionType:       model.ActionTypeEmoji,
 				Text:             emojiUrl,
 			}, nil
 	}
