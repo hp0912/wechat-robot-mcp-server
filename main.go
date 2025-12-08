@@ -73,7 +73,7 @@ func main() {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "EmojiTool",
 		Title:       "表情包工具",
-		Description: "当用户想下载表情包、提取表情包时，可以调用该工具。",
+		Description: "当用户想下载表情包、提取表情包时，可以调用该工具，该工具无需参数。",
 	}, tools.EmojiTool)
 
 	handler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
