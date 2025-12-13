@@ -44,6 +44,37 @@ func main() {
 		Name:        "AIDrawing",
 		Title:       "文生图",
 		Description: "AI绘图工具，当用户想通过文本生成图像时，可以调用该工具。",
+		InputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"prompt": map[string]any{
+					"type":        "string",
+					"description": "根据用户输入内容，提取出的画图提示词，但是不要对提示词进行总结。",
+				},
+				"model": map[string]any{
+					"type":        "string",
+					"description": "画图模型选择（可选）：jimeng-4.0 / jimeng-4.1 / jimeng-4.5，默认 jimeng-4.1。",
+					"enum":        []any{"jimeng-4.0", "jimeng-4.1", "jimeng-4.5"},
+					"default":     "jimeng-4.1",
+				},
+				"negative_prompt": map[string]any{
+					"type":        "string",
+					"description": "用于描述图像中不希望出现的元素或特征的文本，可选。",
+				},
+				"ratio": map[string]any{
+					"type":        "string",
+					"description": "图像的宽高比，可选，默认16:9。",
+					"default":     "16:9",
+				},
+				"resolution": map[string]any{
+					"type":        "string",
+					"description": "图像的分辨率，可选，默认2k。",
+					"default":     "2k",
+				},
+			},
+			"required":             []any{"prompt"},
+			"additionalProperties": false,
+		},
 	}, tools.Drawing)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "AIImage2Image",
@@ -73,7 +104,13 @@ func main() {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "EmojiTool",
 		Title:       "表情包工具",
-		Description: "当用户想下载表情包、提取表情包时，可以调用该工具，该工具无需参数。",
+		Description: "当用户想下载表情包、提取表情包时，可以调用该工具。该工具无需参数（调用时 arguments 传 {}）。",
+		InputSchema: map[string]any{
+			"type":                 "object",
+			"properties":           map[string]any{},
+			"required":             []any{},
+			"additionalProperties": false,
+		},
 	}, tools.EmojiTool)
 
 	handler := mcp.NewStreamableHTTPHandler(func(req *http.Request) *mcp.Server {
