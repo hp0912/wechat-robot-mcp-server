@@ -18,7 +18,7 @@ import (
 )
 
 type DrawingInput struct {
-	Prompt         string `json:"prompt" jsonschema:"根据用户输入内容，提取出的画图提示词，但是不要对提示词进行总结。"`
+	Prompt         string `json:"prompt" jsonschema:"根据用户输入内容，过滤掉与画图无关的内容，组装成画图提示词，不要对用户内容进行转译、修改、总结。"`
 	Model          string `json:"model,omitempty" jsonschema:"画图模型选择（可选）：jimeng-4.0 / jimeng-4.1 / jimeng-4.5，默认 jimeng-4.1。"`
 	NegativePrompt string `json:"negative_prompt,omitempty" jsonschema:"用于描述图像中不希望出现的元素或特征的文本，可选。"`
 	Ratio          string `json:"ratio,omitempty" jsonschema:"图像的宽高比，可选，默认16:9。"`
