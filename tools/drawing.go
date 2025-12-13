@@ -86,6 +86,9 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 			return utils.CallToolResultError(errmsg)
 		}
 
+		if params.Model != "" {
+			jimengConfig.Model = params.Model
+		}
 		jimengConfig.Prompt = params.Prompt
 		jimengConfig.NegativePrompt = params.NegativePrompt
 		if params.Ratio == "" {
@@ -110,6 +113,10 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 			errmsg := fmt.Sprintf("反序列化智谱绘图配置失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
+		}
+
+		if params.Model != "" {
+			glmConfig.Model = params.Model
 		}
 		glmConfig.Prompt = params.Prompt
 		imageURLs, err = pkg.GLMDrawing(&glmConfig)
