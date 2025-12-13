@@ -53,7 +53,7 @@ func main() {
 				},
 				"model": map[string]any{
 					"type":        "string",
-					"description": "画图模型选择（可选）：jimeng-4.0 / jimeng-4.1 / jimeng-4.5，默认 jimeng-4.1。",
+					"description": "画图模型选择（可选）：即梦4.0(jimeng-4.0) / 即梦4.1(jimeng-4.1) / 即梦4.5(jimeng-4.5)，默认 即梦4.1(jimeng-4.1)。",
 					"enum":        []any{"jimeng-4.0", "jimeng-4.1", "jimeng-4.5"},
 					"default":     "jimeng-4.1",
 				},
