@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -67,7 +69,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
 		}
-		if params.Model != "" {
+		if params.Model != "" && params.Model != "none" {
 			doubaoConfig.Model = params.Model
 		}
 		doubaoConfig.Prompt = params.Prompt
@@ -86,8 +88,10 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 			return utils.CallToolResultError(errmsg)
 		}
 
-		if params.Model != "" {
+		if params.Model != "" && params.Model != "none" {
 			jimengConfig.Model = params.Model
+		} else {
+			jimengConfig.Model = "jimeng-4.1"
 		}
 		jimengConfig.Prompt = params.Prompt
 		jimengConfig.NegativePrompt = params.NegativePrompt
@@ -97,6 +101,13 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		jimengConfig.Ratio = params.Ratio
 		if params.Resolution == "" {
 			params.Resolution = "2k"
+		}
+		// 如果分辨率大于4k，重置为2k
+		re := regexp.MustCompile(`(\d+)`)
+		if matches := re.FindStringSubmatch(params.Resolution); len(matches) > 1 {
+			if num, err := strconv.Atoi(matches[1]); err == nil && num > 4 {
+				params.Resolution = "2k"
+			}
 		}
 		jimengConfig.Resolution = params.Resolution
 		jimengConfig.ResponseFormat = "url"
@@ -115,7 +126,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 			return utils.CallToolResultError(errmsg)
 		}
 
-		if params.Model != "" {
+		if params.Model != "" && params.Model != "none" {
 			glmConfig.Model = params.Model
 		}
 		glmConfig.Prompt = params.Prompt
