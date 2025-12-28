@@ -47,32 +47,32 @@ func main() {
 		InputSchema: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"prompt": map[string]any{
+				"prompt": map[string]string{
 					"type":        "string",
 					"description": "根据用户输入内容，提取出的画图提示词，但是不要对提示词进行总结。",
 				},
 				"model": map[string]any{
 					"type":        "string",
-					"description": "画图模型选择（可选）：即梦4.0(jimeng-4.0) / 即梦4.1(jimeng-4.1) / 即梦4.5(jimeng-4.5)，默认 即梦4.1(jimeng-4.1)。",
-					"enum":        []any{"jimeng-4.0", "jimeng-4.1", "jimeng-4.5"},
-					"default":     "jimeng-4.1",
+					"description": "画图模型选择（可选）：即梦4.0(jimeng-4.0) / 即梦4.1(jimeng-4.1) / 即梦4.5(jimeng-4.5) / 豆包4.5(doubao-seedream-4.5) / 豆包4.0(doubao-seedream-4.0) / 豆包文生图(doubao-seedream-3.0-t2i) / 豆包图生图(doubao-seededit-3.0-i2i)，默认: 空(none)。",
+					"enum":        []string{"none", "jimeng-4.0", "jimeng-4.1", "jimeng-4.5", "doubao-seedream-4.5", "doubao-seedream-4.0", "doubao-seedream-3.0-t2i", "doubao-seededit-3.0-i2i"},
+					"default":     "none",
 				},
-				"negative_prompt": map[string]any{
+				"negative_prompt": map[string]string{
 					"type":        "string",
 					"description": "用于描述图像中不希望出现的元素或特征的文本，可选。",
 				},
-				"ratio": map[string]any{
+				"ratio": map[string]string{
 					"type":        "string",
 					"description": "图像的宽高比，可选，默认16:9。",
 					"default":     "16:9",
 				},
-				"resolution": map[string]any{
+				"resolution": map[string]string{
 					"type":        "string",
 					"description": "图像的分辨率，可选，默认2k。",
 					"default":     "2k",
 				},
 			},
-			"required":             []any{"prompt"},
+			"required":             []string{"prompt"},
 			"additionalProperties": false,
 		},
 	}, tools.Drawing)
