@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -15,6 +16,18 @@ import (
 
 type RequestSongInput struct {
 	SongTitle string `json:"song_title" jsonschema:"歌曲标题。"`
+	Singer    string `json:"singer,omitempty" jsonschema:"歌手。"`
+}
+
+type MusicListResponse struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+	Data []struct {
+		N      int    `json:"n"`
+		Title  string `json:"title"`
+		Singer string `json:"singer"`
+		Songid int64  `json:"songid"`
+	} `json:"data"`
 }
 
 type MusicSearchResponse struct {
@@ -34,19 +47,50 @@ type MusicSearchData struct {
 }
 
 func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestSongInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
+	var result MusicSearchData
+	var n int
+
+	if params.Singer != "" {
+		var list MusicListResponse
+		_, err := resty.New().R().
+			SetHeader("Content-Type", "application/json").
+			SetQueryParam("msg", params.SongTitle).
+			SetQueryParam("type", "json").
+			SetQueryParam("br", "7").
+			SetResult(&list).
+			Get("https://api.cenguigui.cn/api/music/netease/WyY_Dg.php")
+		if err != nil {
+			return utils.CallToolResultError(fmt.Sprintf("获取歌曲失败: %v", err))
+		}
+		if len(list.Data) == 0 {
+			return utils.CallToolResultError(fmt.Sprintf("没有搜索到歌曲 %s", params.SongTitle))
+		}
+		for _, item := range list.Data {
+			if strings.Contains(item.Singer, params.Singer) {
+				n = item.N
+				break
+			}
+		}
+		if n == 0 {
+			n = 1
+		}
+	} else {
+		n = 1
+	}
+
 	var resp MusicSearchResponse
 	_, err := resty.New().R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParam("msg", params.SongTitle).
 		SetQueryParam("type", "json").
-		SetQueryParam("n", "1").
+		SetQueryParam("n", fmt.Sprintf("%d", n)).
 		SetQueryParam("br", "7").
 		SetResult(&resp).
 		Get("https://api.cenguigui.cn/api/music/netease/WyY_Dg.php")
 	if err != nil {
 		return utils.CallToolResultError(fmt.Sprintf("获取歌曲失败: %v", err))
 	}
-	result := resp.Data
+	result = resp.Data
 	if result.Title == nil {
 		return utils.CallToolResultError(fmt.Sprintf("没有搜索到歌曲 %s", params.SongTitle))
 	}
