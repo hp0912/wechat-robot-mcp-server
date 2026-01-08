@@ -80,6 +80,44 @@ func main() {
 		Name:        "AIImage2Image",
 		Title:       "图片修改、图生图",
 		Description: "图片修改、编辑、图片合成工具，基于输入的一张或多张图片，结合文本提示词生成新的图片。支持图片混合、风格转换、内容合成等多种创作模式。输入是文字或图片或两者的组合，输出是图片。",
+		InputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"prompt": map[string]string{
+					"type":        "string",
+					"description": "根据用户输入的文本内容，提取出图片混合、风格转换、内容合成等等的提示词，但是不要对提示词进行修改。",
+				},
+				"model": map[string]any{
+					"type":        "string",
+					"description": "画图模型选择（可选）：即梦4.0(jimeng-4.0) / 即梦4.1(jimeng-4.1) / 即梦4.5(jimeng-4.5) / 豆包4.5(doubao-seedream-4.5) / 豆包4.0(doubao-seedream-4.0) / 豆包文生图(doubao-seedream-3.0-t2i) / 豆包图生图(doubao-seededit-3.0-i2i)，默认: 空(none)。",
+					"enum":        []string{"none", "jimeng-4.0", "jimeng-4.1", "jimeng-4.5", "doubao-seedream-4.5", "doubao-seedream-4.0", "doubao-seedream-3.0-t2i", "doubao-seededit-3.0-i2i"},
+					"default":     "none",
+				},
+				"images": map[string]any{
+					"type": "array",
+					"items": map[string]string{
+						"type": "string",
+					},
+					"description": "用于图片编辑、图片混合、风格转换、内容合成等等的图片链接列表，至少需要一张图像。",
+				},
+				"negative_prompt": map[string]string{
+					"type":        "string",
+					"description": "用于描述图像中不希望出现的元素或特征的文本，可选。",
+				},
+				"ratio": map[string]string{
+					"type":        "string",
+					"description": "图像的宽高比，可选，默认16:9。",
+					"default":     "16:9",
+				},
+				"resolution": map[string]string{
+					"type":        "string",
+					"description": "图像的分辨率，可选，默认2k。",
+					"default":     "2k",
+				},
+			},
+			"required":             []string{"prompt", "images"},
+			"additionalProperties": false,
+		},
 	}, tools.Image2Image)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "AIVideoGeneration",
