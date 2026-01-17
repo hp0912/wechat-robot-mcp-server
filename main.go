@@ -138,6 +138,30 @@ func main() {
 		Name:        "TTS",
 		Title:       "文本转语音",
 		Description: "文本转语音工具，当用户想让你说话、发语音时，或者想将文本内容转换成语音消息时，可以调用该工具。",
+		InputSchema: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"content": map[string]string{
+					"type":        "string",
+					"description": "文本转语音的输入文本。",
+				},
+				"emotion": map[string]any{
+					"type":        "string",
+					"description": "输出语音的情感类型。",
+					"enum":        []string{"happy", "sad", "angry", "surprised", "fear", "hate", "excited", "lovey-dovey", "shy", "comfort", "tension", "tender", "magnetic", "vocal - fry", "ASMR"},
+					"default":     "happy",
+				},
+				"context_texts": map[string]any{
+					"type": "array",
+					"items": map[string]string{
+						"type": "string",
+					},
+					"description": "语音合成的辅助信息，用于模型对话式合成，能更好的体现语音情感。例子，1. 语速调整：比如：context_texts: [\"你可以说慢一点吗？\"] 2. 情绪/语气调整 比如：context_texts=[\"你可以用特别特别痛心的语气说话吗?\"] 3. 音量调整 比如：context_texts=[\"你嗓门再小点。\"] 4. 音感调整 比如：context_texts=[\"你能用骄傲的语气来说话吗？\"]",
+				},
+			},
+			"required":             []string{"content"},
+			"additionalProperties": false,
+		},
 	}, tools.TTS)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "EmojiTool",
