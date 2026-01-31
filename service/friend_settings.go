@@ -111,9 +111,6 @@ func (s *FriendSettingsService) GetAIConfig() settings.AIConfig {
 		if s.globalSettings.MaxCompletionTokens != nil {
 			aiConfig.MaxCompletionTokens = *s.globalSettings.MaxCompletionTokens
 		}
-		if s.globalSettings.ImageModel != "" {
-			aiConfig.ImageModel = s.globalSettings.ImageModel
-		}
 		if s.globalSettings.ImageAISettings != nil {
 			aiConfig.ImageAISettings = s.globalSettings.ImageAISettings
 		}
@@ -145,9 +142,6 @@ func (s *FriendSettingsService) GetAIConfig() settings.AIConfig {
 		}
 		if s.friendSettings.MaxCompletionTokens != nil {
 			aiConfig.MaxCompletionTokens = *s.friendSettings.MaxCompletionTokens
-		}
-		if s.friendSettings.ImageModel != nil && *s.friendSettings.ImageModel != "" {
-			aiConfig.ImageModel = *s.friendSettings.ImageModel
 		}
 		if s.friendSettings.ImageAISettings != nil {
 			aiConfig.ImageAISettings = s.friendSettings.ImageAISettings

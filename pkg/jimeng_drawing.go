@@ -24,6 +24,7 @@ type JimengRequest struct {
 }
 
 type JimengConfig struct {
+	Enabled   bool     `json:"enabled,omitempty"`
 	BaseURL   string   `json:"base_url"`
 	SessionID []string `json:"sessionid"`
 	JimengRequest
@@ -34,14 +35,6 @@ type JimengResponse struct {
 	Data    []struct {
 		URL string `json:"url"`
 	} `json:"data"`
-}
-
-func intPtr(v int) *int {
-	return &v
-}
-
-func floatPtr(v float64) *float64 {
-	return &v
 }
 
 func JimengImageGenerations(config *JimengConfig) ([]*string, error) {

@@ -59,11 +59,15 @@ func Image2Image(ctx context.Context, req *mcp.CallToolRequest, params *Image2Im
 
 	aiConfig := settings.GetAIConfig()
 
-	switch aiConfig.ImageModel {
-	case model.ImageModelDoubao:
+	if params.Model == "" || params.Model == "none" {
+		params.Model = "jimeng-4.1"
+	}
+
+	switch params.Model {
+	case "doubao-seedream-4.5", "doubao-seedream-4.0", "doubao-seedream-3.0-t2i", "doubao-seededit-3.0-i2i":
 		// Handle 豆包模型
 		return utils.CallToolResultError("豆包图生图暂未实现")
-	case model.ImageModelJimeng:
+	case "jimeng-4.0", "jimeng-4.1", "jimeng-4.5":
 		// Handle 即梦模型
 		var jimengConfig pkg.JimengConfig
 		if err := json.Unmarshal(aiConfig.ImageAISettings, &jimengConfig); err != nil {
@@ -102,16 +106,6 @@ func Image2Image(ctx context.Context, req *mcp.CallToolRequest, params *Image2Im
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
 		}
-	case model.ImageModelGLM:
-		// Handle 智谱模型
-	case model.ImageModelHunyuan:
-		// Handle 混元模型
-	case model.ImageModelStableDiffusion:
-		// Handle Stable Diffusion 模型
-	case model.ImageModelMidjourney:
-		// Handle Midjourney 模型
-	case model.ImageModelOpenAI:
-		// Handle OpenAI 模型
 	default:
 		return utils.CallToolResultError("不支持的 AI 图像模型")
 	}

@@ -60,45 +60,62 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 
 	aiConfig := settings.GetAIConfig()
 
-	switch aiConfig.ImageModel {
-	case model.ImageModelDoubao:
+	if params.Model == "" || params.Model == "none" {
+		params.Model = "jimeng-4.1"
+	}
+
+	switch params.Model {
+	case "doubao-seedream-4.5", "doubao-seedream-4.0", "doubao-seedream-3.0-t2i", "doubao-seededit-3.0-i2i":
 		// Handle 豆包模型
-		var doubaoConfig pkg.DoubaoConfig
-		if err := json.Unmarshal(aiConfig.ImageAISettings, &doubaoConfig); err != nil {
+		var config struct {
+			DouBao pkg.DoubaoConfig `json:"DouBao"`
+		}
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &config); err != nil {
 			errmsg := fmt.Sprintf("反序列化豆包绘图配置失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
 		}
-		if params.Model != "" && params.Model != "none" {
-			doubaoConfig.Model = params.Model
+		if !config.DouBao.Enabled {
+			return utils.CallToolResultError("豆包绘图未开启")
+		} else {
+			config.DouBao.Enabled = false
 		}
-		doubaoConfig.Prompt = params.Prompt
-		imageURLs, err = pkg.DoubaoDrawing(&doubaoConfig)
+		if params.Model != "" && params.Model != "none" {
+			config.DouBao.Model = params.Model
+		}
+		config.DouBao.Prompt = params.Prompt
+		imageURLs, err = pkg.DoubaoDrawing(&config.DouBao)
 		if err != nil {
 			errmsg := fmt.Sprintf("调用豆包绘图接口失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
 		}
-	case model.ImageModelJimeng:
+	case "jimeng-4.0", "jimeng-4.1", "jimeng-4.5":
 		// Handle 即梦模型
-		var jimengConfig pkg.JimengConfig
-		if err := json.Unmarshal(aiConfig.ImageAISettings, &jimengConfig); err != nil {
+		var config struct {
+			JiMeng pkg.JimengConfig `json:"JiMeng"`
+		}
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &config); err != nil {
 			errmsg := fmt.Sprintf("反序列化即梦绘图配置失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
 		}
-
-		if params.Model != "" && params.Model != "none" {
-			jimengConfig.Model = params.Model
+		if !config.JiMeng.Enabled {
+			return utils.CallToolResultError("即梦绘图未开启")
 		} else {
-			jimengConfig.Model = "jimeng-4.1"
+			config.JiMeng.Enabled = false
 		}
-		jimengConfig.Prompt = params.Prompt
-		jimengConfig.NegativePrompt = params.NegativePrompt
+		if params.Model != "" && params.Model != "none" {
+			config.JiMeng.Model = params.Model
+		} else {
+			config.JiMeng.Model = "jimeng-4.1"
+		}
+		config.JiMeng.Prompt = params.Prompt
+		config.JiMeng.NegativePrompt = params.NegativePrompt
 		if params.Ratio == "" {
 			params.Ratio = "16:9"
 		}
-		jimengConfig.Ratio = params.Ratio
+		config.JiMeng.Ratio = params.Ratio
 		if params.Resolution == "" {
 			params.Resolution = "2k"
 		}
@@ -109,54 +126,14 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 				params.Resolution = "2k"
 			}
 		}
-		jimengConfig.Resolution = params.Resolution
-		jimengConfig.ResponseFormat = "url"
-		imageURLs, err = pkg.JimengImageGenerations(&jimengConfig)
+		config.JiMeng.Resolution = params.Resolution
+		config.JiMeng.ResponseFormat = "url"
+		imageURLs, err = pkg.JimengImageGenerations(&config.JiMeng)
 		if err != nil {
 			errmsg := fmt.Sprintf("调用即梦绘图接口失败: %v", err)
 			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
 		}
-	case model.ImageModelGLM:
-		// Handle 智谱模型
-		var glmConfig pkg.GLMConfig
-		if err := json.Unmarshal(aiConfig.ImageAISettings, &glmConfig); err != nil {
-			errmsg := fmt.Sprintf("反序列化智谱绘图配置失败: %v", err)
-			log.Print(errmsg)
-			return utils.CallToolResultError(errmsg)
-		}
-
-		if params.Model != "" && params.Model != "none" {
-			glmConfig.Model = params.Model
-		}
-		glmConfig.Prompt = params.Prompt
-		imageURLs, err = pkg.GLMDrawing(&glmConfig)
-		if err != nil {
-			errmsg := fmt.Sprintf("调用智谱绘图接口失败: %v", err)
-			log.Print(errmsg)
-			return utils.CallToolResultError(errmsg)
-		}
-	case model.ImageModelHunyuan:
-		// Handle 混元模型
-		var hunyuanConfig pkg.HunyuanConfig
-		if err := json.Unmarshal(aiConfig.ImageAISettings, &hunyuanConfig); err != nil {
-			errmsg := fmt.Sprintf("反序列化混元绘图配置失败: %v", err)
-			log.Print(errmsg)
-			return utils.CallToolResultError(errmsg)
-		}
-		hunyuanConfig.Prompt = params.Prompt
-		imageURLs, err = pkg.SubmitHunyuanDrawing(&hunyuanConfig)
-		if err != nil {
-			errmsg := fmt.Sprintf("调用混元绘图接口失败: %v", err)
-			log.Print(errmsg)
-			return utils.CallToolResultError(errmsg)
-		}
-	case model.ImageModelStableDiffusion:
-		// Handle Stable Diffusion 模型
-	case model.ImageModelMidjourney:
-		// Handle Midjourney 模型
-	case model.ImageModelOpenAI:
-		// Handle OpenAI 模型
 	default:
 		return utils.CallToolResultError("不支持的 AI 图像模型")
 	}

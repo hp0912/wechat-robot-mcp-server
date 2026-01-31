@@ -10,6 +10,7 @@ import (
 )
 
 type DoubaoConfig struct {
+	Enabled                   bool   `json:"enabled,omitempty"`
 	ApiKey                    string `json:"api_key"`
 	Model                     string `json:"model"`
 	Prompt                    string `json:"prompt"`
