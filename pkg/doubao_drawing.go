@@ -34,6 +34,16 @@ func DoubaoDrawing(config *DoubaoConfig) ([]*string, error) {
 		ResponseFormat: volcengine.String(model.GenerateImagesResponseFormatURL),
 		Watermark:      &config.Watermark,
 	}
+	switch generateReq.Model {
+	case "doubao-seedream-4.5":
+		generateReq.Model = "doubao-seedream-4-5-251128"
+	case "doubao-seedream-4.0":
+		generateReq.Model = "doubao-seedream-4-0-251128"
+	case "doubao-seedream-3.0-t2i":
+		generateReq.Model = "doubao-seedream-3-0-t2i-250415"
+	case "doubao-seededit-3.0-i2i":
+		generateReq.Model = "doubao-seededit-3-0-i2i-250628"
+	}
 	if config.Image != "" {
 		generateReq.Image = &config.Image
 	}
