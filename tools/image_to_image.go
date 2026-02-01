@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -69,41 +68,73 @@ func Image2Image(ctx context.Context, req *mcp.CallToolRequest, params *Image2Im
 		return utils.CallToolResultError("豆包图生图暂未实现")
 	case "jimeng-4.0", "jimeng-4.1", "jimeng-4.5":
 		// Handle 即梦模型
-		var jimengConfig pkg.JimengConfig
-		if err := json.Unmarshal(aiConfig.ImageAISettings, &jimengConfig); err != nil {
+		var config struct {
+			JiMeng pkg.JimengConfig `json:"JiMeng"`
+		}
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &config); err != nil {
 			errmsg := fmt.Sprintf("反序列化即梦绘图配置失败: %v", err)
-			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
 		}
-
-		if params.Model != "" && params.Model != "none" {
-			jimengConfig.Model = params.Model
+		if !config.JiMeng.Enabled {
+			return utils.CallToolResultError("即梦绘图未开启")
 		} else {
-			jimengConfig.Model = "jimeng-4.1"
+			config.JiMeng.Enabled = false
+		}
+		if params.Model != "" && params.Model != "none" {
+			config.JiMeng.Model = params.Model
+		} else {
+			config.JiMeng.Model = "jimeng-4.1"
 		}
 
-		jimengConfig.Prompt = params.Prompt
+		config.JiMeng.Prompt = params.Prompt
 
 		var images []*string
 		for _, img := range params.Images {
 			images = append(images, &img)
 		}
-		jimengConfig.Images = images
+		config.JiMeng.Images = images
 
-		jimengConfig.NegativePrompt = params.NegativePrompt
+		config.JiMeng.NegativePrompt = params.NegativePrompt
 		if params.Ratio == "" {
 			params.Ratio = "16:9"
 		}
-		jimengConfig.Ratio = params.Ratio
+		config.JiMeng.Ratio = params.Ratio
 		if params.Resolution == "" {
 			params.Resolution = "2k"
 		}
-		jimengConfig.Resolution = params.Resolution
-		jimengConfig.ResponseFormat = "url"
-		imageURLs, err = pkg.JimengImageCompositions(&jimengConfig)
+		config.JiMeng.Resolution = params.Resolution
+		config.JiMeng.ResponseFormat = "url"
+		imageURLs, err = pkg.JimengImageCompositions(&config.JiMeng)
 		if err != nil {
 			errmsg := fmt.Sprintf("调用即梦绘图接口失败: %v", err)
-			log.Print(errmsg)
+			return utils.CallToolResultError(errmsg)
+		}
+	case "Z-Image", "Z-Image-Turbo", "Qwen-Image-Edit-2511":
+		// Handle 造相模型
+		var config struct {
+			ZImage pkg.ZImageConfig `json:"Z-Image"`
+		}
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &config); err != nil {
+			errmsg := fmt.Sprintf("反序列化造相绘图配置失败: %v", err)
+			return utils.CallToolResultError(errmsg)
+		}
+		if !config.ZImage.Enabled {
+			return utils.CallToolResultError("造相绘图未开启")
+		} else {
+			config.ZImage.Enabled = false
+		}
+		if params.Model != "" && params.Model != "none" {
+			config.ZImage.Model = params.Model
+		} else {
+			config.ZImage.Model = "Qwen-Image-Edit-2511"
+		}
+		config.ZImage.Prompt = params.Prompt
+		if len(params.Images) > 0 {
+			config.ZImage.ImageURL = params.Images
+		}
+		imageURLs, err = pkg.ZImageDrawing(&config.ZImage)
+		if err != nil {
+			errmsg := fmt.Sprintf("调用造相绘图接口失败: %v", err)
 			return utils.CallToolResultError(errmsg)
 		}
 	default:
@@ -112,7 +143,6 @@ func Image2Image(ctx context.Context, req *mcp.CallToolRequest, params *Image2Im
 
 	if len(imageURLs) == 0 {
 		errmsg := "未生成任何图像"
-		log.Print(errmsg)
 		return utils.CallToolResultError(errmsg)
 	}
 

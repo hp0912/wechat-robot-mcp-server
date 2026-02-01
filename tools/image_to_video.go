@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -70,7 +69,6 @@ func Image2Video(ctx context.Context, req *mcp.CallToolRequest, params *Image2Vi
 		var jimengConfig pkg.JimengConfig
 		if err := json.Unmarshal(aiConfig.ImageAISettings, &jimengConfig); err != nil {
 			errmsg := fmt.Sprintf("反序列化即梦绘图配置失败: %v", err)
-			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
 		}
 
@@ -97,7 +95,6 @@ func Image2Video(ctx context.Context, req *mcp.CallToolRequest, params *Image2Vi
 		imageURLs, err = pkg.JimengVideoGenerations(&jimengConfig)
 		if err != nil {
 			errmsg := fmt.Sprintf("调用即梦生成视频接口失败: %v", err)
-			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
 		}
 	default:
@@ -106,7 +103,6 @@ func Image2Video(ctx context.Context, req *mcp.CallToolRequest, params *Image2Vi
 
 	if len(imageURLs) == 0 {
 		errmsg := "未生成任何图像"
-		log.Print(errmsg)
 		return utils.CallToolResultError(errmsg)
 	}
 
