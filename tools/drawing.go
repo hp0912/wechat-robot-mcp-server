@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -72,7 +71,6 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		}
 		if err := json.Unmarshal(aiConfig.ImageAISettings, &config); err != nil {
 			errmsg := fmt.Sprintf("反序列化豆包绘图配置失败: %v", err)
-			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
 		}
 		if !config.DouBao.Enabled {
@@ -87,7 +85,6 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		imageURLs, err = pkg.DoubaoDrawing(&config.DouBao)
 		if err != nil {
 			errmsg := fmt.Sprintf("调用豆包绘图接口失败: %v", err)
-			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
 		}
 	case "jimeng-4.0", "jimeng-4.1", "jimeng-4.5":
@@ -97,7 +94,6 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		}
 		if err := json.Unmarshal(aiConfig.ImageAISettings, &config); err != nil {
 			errmsg := fmt.Sprintf("反序列化即梦绘图配置失败: %v", err)
-			log.Print(errmsg)
 			return utils.CallToolResultError(errmsg)
 		}
 		if !config.JiMeng.Enabled {
@@ -131,7 +127,31 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		imageURLs, err = pkg.JimengImageGenerations(&config.JiMeng)
 		if err != nil {
 			errmsg := fmt.Sprintf("调用即梦绘图接口失败: %v", err)
-			log.Print(errmsg)
+			return utils.CallToolResultError(errmsg)
+		}
+	case "Z-Image", "Z-Image-Turbo", "Qwen-Image-Edit-2511":
+		// Handle 造相模型
+		var config struct {
+			ZImage pkg.ZImageConfig `json:"Z-Image"`
+		}
+		if err := json.Unmarshal(aiConfig.ImageAISettings, &config); err != nil {
+			errmsg := fmt.Sprintf("反序列化造相绘图配置失败: %v", err)
+			return utils.CallToolResultError(errmsg)
+		}
+		if !config.ZImage.Enabled {
+			return utils.CallToolResultError("造相绘图未开启")
+		} else {
+			config.ZImage.Enabled = false
+		}
+		if params.Model != "" && params.Model != "none" {
+			config.ZImage.Model = params.Model
+		} else {
+			config.ZImage.Model = "Z-Image-Turbo"
+		}
+		config.ZImage.Prompt = params.Prompt
+		imageURLs, err = pkg.ZImageDrawing(&config.ZImage)
+		if err != nil {
+			errmsg := fmt.Sprintf("调用造相绘图接口失败: %v", err)
 			return utils.CallToolResultError(errmsg)
 		}
 	default:
@@ -140,7 +160,6 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 
 	if len(imageURLs) == 0 {
 		errmsg := "未生成任何图像"
-		log.Print(errmsg)
 		return utils.CallToolResultError(errmsg)
 	}
 
