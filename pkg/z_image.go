@@ -52,9 +52,10 @@ func ZImageDrawing(config *ZImageConfig) ([]*string, error) {
 		return nil, fmt.Errorf("不支持的造相模型: %s", config.Model)
 	}
 	// 准备请求体
-	requestBody, _ := json.Marshal(map[string]string{
-		"model":  config.Model,
-		"prompt": config.Prompt,
+	requestBody, _ := json.Marshal(map[string]any{
+		"model":     config.Model,
+		"prompt":    config.Prompt,
+		"image_url": config.ImageURL,
 	})
 	// 创建HTTP请求
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/images/generations", strings.TrimSuffix(config.BaseURL, "/")), bytes.NewBuffer(requestBody))
@@ -87,7 +88,7 @@ func ZImageDrawing(config *ZImageConfig) ([]*string, error) {
 		return nil, fmt.Errorf("解析响应失败: %v", err)
 	}
 
-	deadline := time.Now().Add(5 * time.Minute)
+	deadline := time.Now().Add(15 * time.Minute)
 	for {
 		if time.Now().After(deadline) {
 			return nil, fmt.Errorf("造相绘图任务超时")
