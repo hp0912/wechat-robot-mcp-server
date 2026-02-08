@@ -64,7 +64,7 @@ func Image2Video(ctx context.Context, req *mcp.CallToolRequest, params *Image2Vi
 	}
 
 	switch params.Model {
-	case "jimeng-video-3.5-pro", "jimeng-video-veo3", "jimeng-video-veo3.1", "jimeng-video-sora2", "jimeng-video-3.0-pro", "jimeng-video-3.0", "jimeng-video-3.0-fast":
+	case "jimeng-video-4.0-pro", "jimeng-video-4.0", "jimeng-video-3.5-pro", "jimeng-video-veo3", "jimeng-video-veo3.1", "jimeng-video-sora2", "jimeng-video-3.0-pro", "jimeng-video-3.0", "jimeng-video-3.0-fast":
 		// Handle 即梦模型
 		var jimengConfig pkg.JimengConfig
 		if err := json.Unmarshal(aiConfig.ImageAISettings, &jimengConfig); err != nil {

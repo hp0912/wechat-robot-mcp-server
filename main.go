@@ -132,8 +132,8 @@ func main() {
 				},
 				"model": map[string]any{
 					"type":        "string",
-					"description": "图生视频模型选择（可选）：jimeng-video-3.5-pro / jimeng-video-veo3 / jimeng-video-veo3.1 / jimeng-video-sora2 / jimeng-video-3.0-pro / jimeng-video-3.0 / jimeng-video-3.0-fast，默认: 空(none)。",
-					"enum":        []string{"none", "jimeng-video-3.5-pro", "jimeng-video-veo3", "jimeng-video-veo3.1", "jimeng-video-sora2", "jimeng-video-3.0-pro", "jimeng-video-3.0", "jimeng-video-3.0-fast"},
+					"description": "图生视频模型选择，默认: 空(none)。",
+					"enum":        []string{"none", "jimeng-video-4.0-pro", "jimeng-video-4.0", "jimeng-video-3.5-pro", "jimeng-video-veo3", "jimeng-video-veo3.1", "jimeng-video-sora2", "jimeng-video-3.0-pro", "jimeng-video-3.0", "jimeng-video-3.0-fast"},
 					"default":     "none",
 				},
 				"file_paths": map[string]any{
