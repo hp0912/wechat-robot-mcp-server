@@ -53,8 +53,8 @@ func main() {
 				},
 				"model": map[string]any{
 					"type":        "string",
-					"description": "画图模型选择（可选）：即梦4.0(jimeng-4.0) / 即梦4.1(jimeng-4.1) / 即梦4.5(jimeng-4.5) / 豆包4.5(doubao-seedream-4.5) / 豆包4.0(doubao-seedream-4.0) / 豆包文生图(doubao-seedream-3.0-t2i) / 豆包图生图(doubao-seededit-3.0-i2i) / 造相基础版(Z-Image) / 造相蒸馏版(Z-Image-Turbo) / 造相图片编辑(Qwen-Image-Edit-2511)，默认: 空(none)。",
-					"enum":        []string{"none", "jimeng-4.0", "jimeng-4.1", "jimeng-4.5", "doubao-seedream-4.5", "doubao-seedream-4.0", "doubao-seedream-3.0-t2i", "doubao-seededit-3.0-i2i", "Z-Image", "Z-Image-Turbo", "Qwen-Image-Edit-2511"},
+					"description": "画图模型选择（可选）：即梦4.5(jimeng-4.5) / 即梦4.6(jimeng-4.6) / 即梦5.0(jimeng-5.0) / 豆包4.5(doubao-seedream-4.5) / 豆包4.0(doubao-seedream-4.0) / 豆包文生图(doubao-seedream-3.0-t2i) / 豆包图生图(doubao-seededit-3.0-i2i) / 造相基础版(Z-Image) / 造相蒸馏版(Z-Image-Turbo) / 造相图片编辑(Qwen-Image-Edit-2511)，默认: 空(none)。",
+					"enum":        []string{"none", "jimeng-4.5", "jimeng-4.6", "jimeng-5.0", "doubao-seedream-4.5", "doubao-seedream-4.0", "doubao-seedream-3.0-t2i", "doubao-seededit-3.0-i2i", "Z-Image", "Z-Image-Turbo", "Qwen-Image-Edit-2511"},
 					"default":     "none",
 				},
 				"negative_prompt": map[string]string{
@@ -89,8 +89,8 @@ func main() {
 				},
 				"model": map[string]any{
 					"type":        "string",
-					"description": "画图模型选择（可选）：即梦4.0(jimeng-4.0) / 即梦4.1(jimeng-4.1) / 即梦4.5(jimeng-4.5) / 豆包4.5(doubao-seedream-4.5) / 豆包4.0(doubao-seedream-4.0) / 豆包文生图(doubao-seedream-3.0-t2i) / 豆包图生图(doubao-seededit-3.0-i2i) / 造相基础版(Z-Image) / 造相蒸馏版(Z-Image-Turbo) / 造相图片编辑(Qwen-Image-Edit-2511)，默认: 空(none)。",
-					"enum":        []string{"none", "jimeng-4.0", "jimeng-4.1", "jimeng-4.5", "doubao-seedream-4.5", "doubao-seedream-4.0", "doubao-seedream-3.0-t2i", "doubao-seededit-3.0-i2i", "Z-Image", "Z-Image-Turbo", "Qwen-Image-Edit-2511"},
+					"description": "画图模型选择（可选）：即梦4.5(jimeng-4.5) / 即梦4.6(jimeng-4.6) / 即梦5.0(jimeng-5.0) / 豆包4.5(doubao-seedream-4.5) / 豆包4.0(doubao-seedream-4.0) / 豆包文生图(doubao-seedream-3.0-t2i) / 豆包图生图(doubao-seededit-3.0-i2i) / 造相基础版(Z-Image) / 造相蒸馏版(Z-Image-Turbo) / 造相图片编辑(Qwen-Image-Edit-2511)，默认: 空(none)。",
+					"enum":        []string{"none", "jimeng-4.5", "jimeng-4.6", "jimeng-5.0", "doubao-seedream-4.5", "doubao-seedream-4.0", "doubao-seedream-3.0-t2i", "doubao-seededit-3.0-i2i", "Z-Image", "Z-Image-Turbo", "Qwen-Image-Edit-2511"},
 					"default":     "none",
 				},
 				"images": map[string]any{
@@ -133,7 +133,7 @@ func main() {
 				"model": map[string]any{
 					"type":        "string",
 					"description": "图生视频模型选择，默认: 空(none)。",
-					"enum":        []string{"none", "jimeng-video-4.0-pro", "jimeng-video-4.0", "jimeng-video-3.5-pro", "jimeng-video-veo3", "jimeng-video-veo3.1", "jimeng-video-sora2", "jimeng-video-3.0-pro", "jimeng-video-3.0", "jimeng-video-3.0-fast"},
+					"enum":        []string{"none", "jimeng-video-seedance-2.0", "jimeng-video-3.5-pro", "jimeng-video-veo3", "jimeng-video-veo3.1", "jimeng-video-sora2", "jimeng-video-3.0-pro", "jimeng-video-3.0", "jimeng-video-3.0-fast"},
 					"default":     "none",
 				},
 				"file_paths": map[string]any{

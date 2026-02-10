@@ -20,7 +20,7 @@ import (
 
 type DrawingInput struct {
 	Prompt         string `json:"prompt" jsonschema:"根据用户输入内容，过滤掉与画图无关的内容，组装成画图提示词，不要对用户内容进行转译、修改、总结。"`
-	Model          string `json:"model,omitempty" jsonschema:"画图模型选择（可选）：jimeng-4.0 / jimeng-4.1 / jimeng-4.5，默认 jimeng-4.1。"`
+	Model          string `json:"model,omitempty" jsonschema:"画图模型选择（可选）"`
 	NegativePrompt string `json:"negative_prompt,omitempty" jsonschema:"用于描述图像中不希望出现的元素或特征的文本，可选。"`
 	Ratio          string `json:"ratio,omitempty" jsonschema:"图像的宽高比，可选，默认16:9。"`
 	Resolution     string `json:"resolution,omitempty" jsonschema:"图像的分辨率，可选，默认2k。"`
@@ -87,7 +87,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 			errmsg := fmt.Sprintf("调用豆包绘图接口失败: %v", err)
 			return utils.CallToolResultError(errmsg)
 		}
-	case "jimeng-4.0", "jimeng-4.1", "jimeng-4.5":
+	case "jimeng-4.5", "jimeng-4.6", "jimeng-5.0":
 		// Handle 即梦模型
 		var config struct {
 			JiMeng pkg.JimengConfig `json:"JiMeng"`
@@ -104,7 +104,7 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		if params.Model != "" && params.Model != "none" {
 			config.JiMeng.Model = params.Model
 		} else {
-			config.JiMeng.Model = "jimeng-4.1"
+			config.JiMeng.Model = "jimeng-4.5"
 		}
 		config.JiMeng.Prompt = params.Prompt
 		config.JiMeng.NegativePrompt = params.NegativePrompt

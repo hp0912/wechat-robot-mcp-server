@@ -18,7 +18,7 @@ import (
 
 type Image2VideoInput struct {
 	Prompt     string   `json:"prompt" jsonschema:"根据用户输入的文本内容，提取出“生成视频”的提示词，但是不要对提示词进行修改。"`
-	Model      string   `json:"model,omitempty" jsonschema:"画图模型选择（可选）：jimeng-4.0 / jimeng-4.1 / jimeng-4.5，默认 jimeng-4.1。"`
+	Model      string   `json:"model,omitempty" jsonschema:"画图模型选择（可选）"`
 	FilePaths  []string `json:"file_paths,omitempty" jsonschema:"用于视频的首尾帧的图片地址列表，可选。不提供则表示通过文本生成视频。"`
 	Ratio      string   `json:"ratio,omitempty" jsonschema:"生成视频比例，可选。"`
 	Resolution string   `json:"resolution,omitempty" jsonschema:"生成视频分辨率，可选。"`
@@ -64,7 +64,7 @@ func Image2Video(ctx context.Context, req *mcp.CallToolRequest, params *Image2Vi
 	}
 
 	switch params.Model {
-	case "jimeng-video-4.0-pro", "jimeng-video-4.0", "jimeng-video-3.5-pro", "jimeng-video-veo3", "jimeng-video-veo3.1", "jimeng-video-sora2", "jimeng-video-3.0-pro", "jimeng-video-3.0", "jimeng-video-3.0-fast":
+	case "jimeng-video-seedance-2.0", "jimeng-video-3.5-pro", "jimeng-video-veo3", "jimeng-video-veo3.1", "jimeng-video-sora2", "jimeng-video-3.0-pro", "jimeng-video-3.0", "jimeng-video-3.0-fast":
 		// Handle 即梦模型
 		var jimengConfig pkg.JimengConfig
 		if err := json.Unmarshal(aiConfig.ImageAISettings, &jimengConfig); err != nil {
