@@ -18,7 +18,7 @@ import (
 
 type Image2ImageInput struct {
 	Prompt         string   `json:"prompt" jsonschema:"根据用户输入的文本内容，提取出图片混合、风格转换、内容合成等等的提示词，但是不要对提示词进行修改。"`
-	Model          string   `json:"model,omitempty" jsonschema:"画图模型选择（可选）：jimeng-4.0 / jimeng-4.1 / jimeng-4.5，默认 jimeng-4.1。"`
+	Model          string   `json:"model,omitempty" jsonschema:"画图模型选择（可选）"`
 	Images         []string `json:"images" jsonschema:"用于图片编辑、图片混合、风格转换、内容合成等等的图片链接列表，至少需要一张图像。"`
 	NegativePrompt string   `json:"negative_prompt,omitempty" jsonschema:"用于描述图像中不希望出现的元素或特征的文本，可选。"`
 	Ratio          string   `json:"ratio,omitempty" jsonschema:"图像的宽高比，可选，默认16:9。"`
@@ -66,7 +66,7 @@ func Image2Image(ctx context.Context, req *mcp.CallToolRequest, params *Image2Im
 	case "doubao-seedream-4.5", "doubao-seedream-4.0", "doubao-seedream-3.0-t2i", "doubao-seededit-3.0-i2i":
 		// Handle 豆包模型
 		return utils.CallToolResultError("豆包图生图暂未实现")
-	case "jimeng-4.0", "jimeng-4.1", "jimeng-4.5":
+	case "jimeng-4.5", "jimeng-4.6", "jimeng-5.0":
 		// Handle 即梦模型
 		var config struct {
 			JiMeng pkg.JimengConfig `json:"JiMeng"`
@@ -83,7 +83,7 @@ func Image2Image(ctx context.Context, req *mcp.CallToolRequest, params *Image2Im
 		if params.Model != "" && params.Model != "none" {
 			config.JiMeng.Model = params.Model
 		} else {
-			config.JiMeng.Model = "jimeng-4.1"
+			config.JiMeng.Model = "jimeng-4.5"
 		}
 
 		config.JiMeng.Prompt = params.Prompt
