@@ -89,14 +89,10 @@ func ImageRecognition(ctx context.Context, req *mcp.CallToolRequest, params *Ima
 	}
 
 	return &mcp.CallToolResult{
-			Content: []mcp.Content{
-				&mcp.TextContent{
-					Text: resp.Choices[0].Message.Content,
-				},
+		Content: []mcp.Content{
+			&mcp.TextContent{
+				Text: resp.Choices[0].Message.Content,
 			},
-		}, &model.CommonOutput{
-			IsCallToolResult: true,
-			ActionType:       model.ActionTypeSendTextMessage,
-			Text:             resp.Choices[0].Message.Content,
-		}, nil
+		},
+	}, nil, nil
 }
