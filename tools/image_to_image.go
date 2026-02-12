@@ -59,7 +59,7 @@ func Image2Image(ctx context.Context, req *mcp.CallToolRequest, params *Image2Im
 	aiConfig := settings.GetAIConfig()
 
 	if params.Model == "" || params.Model == "none" {
-		params.Model = "jimeng-4.1"
+		params.Model = "jimeng-5.0"
 	}
 
 	switch params.Model {
@@ -83,7 +83,7 @@ func Image2Image(ctx context.Context, req *mcp.CallToolRequest, params *Image2Im
 		if params.Model != "" && params.Model != "none" {
 			config.JiMeng.Model = params.Model
 		} else {
-			config.JiMeng.Model = "jimeng-4.5"
+			config.JiMeng.Model = "jimeng-5.0"
 		}
 
 		config.JiMeng.Prompt = params.Prompt
