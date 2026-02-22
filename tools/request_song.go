@@ -20,12 +20,14 @@ type RequestSongInput struct {
 }
 
 type MusicListResponse struct {
-	Code   int     `json:"code"`
-	Msg    string  `json:"msg"`
-	Result []Music `json:"result"`
+	Code   int    `json:"code"`
+	Msg    string `json:"msg"`
+	Result struct {
+		Songs []MusicInfo `json:"songs"`
+	} `json:"result"`
 }
 
-type Music struct {
+type MusicInfo struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
 	Al   struct {
@@ -47,15 +49,14 @@ type MusicSearchResponse struct {
 }
 
 type MusicSearchData struct {
-	ID  string `json:"id"`
+	ID  int64  `json:"id"`
 	URL string `json:"url"`
 }
 
 func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestSongInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
 	var result MusicSearchData
-	var music Music
+	var music MusicInfo
 	var list MusicListResponse
-
 	_, err := resty.New().R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParam("keywords", fmt.Sprintf("%s %s", params.SongTitle, params.Singer)).
@@ -65,11 +66,11 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 	if err != nil {
 		return utils.CallToolResultError(fmt.Sprintf("获取歌曲失败: %v", err))
 	}
-	if len(list.Result) == 0 {
+	if len(list.Result.Songs) == 0 {
 		return utils.CallToolResultError(fmt.Sprintf("没有搜索到歌曲 %s", params.SongTitle))
 	}
 
-	music = list.Result[0]
+	music = list.Result.Songs[0]
 
 	var resp MusicSearchResponse
 	_, err = resty.New().R().
