@@ -20,92 +20,84 @@ type RequestSongInput struct {
 }
 
 type MusicListResponse struct {
-	Code int    `json:"code"`
-	Msg  string `json:"msg"`
-	Data []struct {
-		ID     string `json:"id"`
+	Code   int     `json:"code"`
+	Msg    string  `json:"msg"`
+	Result []Music `json:"result"`
+}
+
+type Music struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	Al   struct {
+		ID     int64  `json:"id"`
 		Name   string `json:"name"`
-		Artist string `json:"artist"`
-	} `json:"data"`
+		PicUrl string `json:"picUrl"`
+	} `json:"al"`
+	Ar []struct {
+		ID   int64  `json:"id"`
+		Name string `json:"name"`
+	} `json:"ar"`
+	Alia []string `json:"alia"`
 }
 
 type MusicSearchResponse struct {
-	Code int             `json:"code"`
-	Msg  string          `json:"msg"`
-	Data MusicSearchData `json:"data"`
+	Code int               `json:"code"`
+	Msg  string            `json:"msg"`
+	Data []MusicSearchData `json:"data"`
 }
 
 type MusicSearchData struct {
-	ID     string  `json:"id"`
-	Name   *string `json:"name"`
-	Album  *string `json:"album"`
-	Artist string  `json:"artist"`
-	Pic    *string `json:"pic"`
-	URL    string  `json:"url"`
-	Lrc    *string `json:"lrc"`
+	ID  string `json:"id"`
+	URL string `json:"url"`
 }
 
 func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestSongInput) (*mcp.CallToolResult, *model.CommonOutput, error) {
 	var result MusicSearchData
-	var musicId string
+	var music Music
 	var list MusicListResponse
 
 	_, err := resty.New().R().
 		SetHeader("Content-Type", "application/json").
-		SetQueryParam("name", params.SongTitle).
-		SetQueryParam("type", "qq").
-		SetQueryParam("page", "1").
-		SetQueryParam("limit", "20").
+		SetQueryParam("keywords", fmt.Sprintf("%s %s", params.SongTitle, params.Singer)).
+		SetQueryParam("type", "1").
 		SetResult(&list).
-		Get("https://yunzhiapi.cn/API/hqyyid.php")
+		Get("http://netease-cloud-music:3000/cloudsearch")
 	if err != nil {
 		return utils.CallToolResultError(fmt.Sprintf("获取歌曲失败: %v", err))
 	}
-	if len(list.Data) == 0 {
+	if len(list.Result) == 0 {
 		return utils.CallToolResultError(fmt.Sprintf("没有搜索到歌曲 %s", params.SongTitle))
 	}
 
-	if params.Singer != "" {
-		for _, item := range list.Data {
-			if strings.Contains(item.Artist, params.Singer) {
-				musicId = item.ID
-				break
-			}
-		}
-		if musicId == "" {
-			musicId = list.Data[0].ID
-		}
-	} else {
-		musicId = list.Data[0].ID
-	}
+	music = list.Result[0]
 
 	var resp MusicSearchResponse
 	_, err = resty.New().R().
 		SetHeader("Content-Type", "application/json").
-		SetQueryParam("id", musicId).
-		SetQueryParam("type", "qq").
+		SetQueryParam("id", fmt.Sprintf("%d", music.ID)).
 		SetResult(&resp).
-		Get("https://yunzhiapi.cn/API/yyjhss.php")
+		Get("http://netease-cloud-music:3000/song/url")
 	if err != nil {
 		return utils.CallToolResultError(fmt.Sprintf("获取歌曲失败: %v", err))
 	}
-	result = resp.Data
-	if result.Name == nil || result.Album == nil {
+	if len(resp.Data) == 0 {
 		return utils.CallToolResultError(fmt.Sprintf("没有搜索到歌曲 %s", params.SongTitle))
 	}
+	result = resp.Data[0]
 
-	music := protobuf.AppMessage{
-		AppID:      "wx5aa333606550dfd5",
-		SDKVer:     "0",
-		Title:      *result.Name,
-		Des:        fmt.Sprintf("%s -%s", *result.Album, result.Artist),
-		Action:     "view",
-		Type:       3,
-		ShowType:   0,
-		URL:        result.URL,
-		DataURL:    result.URL,
-		LowURL:     result.URL,
-		LowDataURL: result.URL,
+	musicMsg := protobuf.AppMessage{
+		AppID:        "wx5aa333606550dfd5",
+		SDKVer:       "0",
+		Title:        music.Name,
+		Action:       "view",
+		Type:         3,
+		ShowType:     0,
+		ThumbURL:     music.Al.PicUrl,
+		SongAlbumURL: music.Al.PicUrl,
+		URL:          result.URL,
+		DataURL:      result.URL,
+		LowURL:       result.URL,
+		LowDataURL:   result.URL,
 		AppAttach: protobuf.AppAttach{
 			TotalLen: 0,
 		},
@@ -116,15 +108,23 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 			AppServiceType: 0,
 		},
 	}
-	if result.Lrc != nil {
-		music.SongLyric = *result.Lrc
+	if len(music.Alia) > 0 {
+		musicMsg.Des = music.Alia[0]
+	} else {
+		musicMsg.Des = music.Name
 	}
-	if result.Pic != nil {
-		music.ThumbURL = *result.Pic
-		music.SongAlbumURL = *result.Pic
+	if music.Al.Name != "" {
+		musicMsg.Des = fmt.Sprintf("%s - %s", musicMsg.Des, music.Al.Name)
+	}
+	if len(music.Ar) > 0 {
+		artistNames := make([]string, len(music.Ar))
+		for i, ar := range music.Ar {
+			artistNames[i] = ar.Name
+		}
+		musicMsg.Des = fmt.Sprintf("%s - %s", musicMsg.Des, strings.Join(artistNames, " "))
 	}
 
-	xmlBytes, err := xml.MarshalIndent(music, "", "  ")
+	xmlBytes, err := xml.MarshalIndent(musicMsg, "", "  ")
 	if err != nil {
 		return utils.CallToolResultError(fmt.Sprintf("序列化歌曲失败: %v", err))
 	}
