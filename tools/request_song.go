@@ -87,11 +87,11 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 	result = resp.Data[0]
 
 	musicMsg := protobuf.AppMessage{
-		AppID:        "wx5aa333606550dfd5",
+		AppID:        "wx8dd6ecd81906fd84",
 		SDKVer:       "0",
 		Title:        music.Name,
 		Action:       "view",
-		Type:         3,
+		Type:         76,
 		ShowType:     0,
 		ThumbURL:     music.Al.PicUrl,
 		SongAlbumURL: music.Al.PicUrl,
