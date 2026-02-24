@@ -166,7 +166,7 @@ func main() {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "ImageRecognition",
 		Title:       "图像识别",
-		Description: "图像识别工具，当用户想识别图片中的内容、提取图片中的信息时，可以调用该工具，输入是图片，输出是文字。",
+		Description: "图像识别工具，当用户想识别图片中的内容、提取图片中的信息时，先判断大模型自己是否支持多模态/图像识别，如果自己支持，则不用调用这个工具，否则可以调用该工具，输入是图片，输出是文字。",
 	}, tools.ImageRecognition)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "RequestSong",
