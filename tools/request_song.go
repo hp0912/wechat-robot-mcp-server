@@ -131,15 +131,10 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 	}
 
 	return &mcp.CallToolResult{
-			Content: []mcp.Content{
-				&mcp.TextContent{
-					Text: "点播成功",
-				},
+		Content: []mcp.Content{
+			&mcp.TextContent{
+				Text: fmt.Sprintf("<wechat-robot-appmsg type=\"3\">\n%s\n</wechat-robot-appmsg>", string(xmlBytes)),
 			},
-		}, &model.CommonOutput{
-			IsCallToolResult: true,
-			ActionType:       model.ActionTypeSendAppMessage,
-			AppType:          3,
-			AppXML:           string(xmlBytes),
-		}, nil
+		},
+	}, nil, nil
 }
