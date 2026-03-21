@@ -163,22 +163,18 @@ func Drawing(ctx context.Context, req *mcp.CallToolRequest, params *DrawingInput
 		return utils.CallToolResultError(errmsg)
 	}
 
-	var attachmentURLList []string
+	var builder strings.Builder
 	for _, url := range imageURLs {
 		if url != nil {
-			attachmentURLList = append(attachmentURLList, *url)
+			fmt.Fprintf(&builder, "<wechat-robot-image-url>%s</wechat-robot-image-url>", *url)
 		}
 	}
 
 	return &mcp.CallToolResult{
-			Content: []mcp.Content{
-				&mcp.TextContent{
-					Text: "绘图成功",
-				},
+		Content: []mcp.Content{
+			&mcp.TextContent{
+				Text: builder.String(),
 			},
-		}, &model.CommonOutput{
-			IsCallToolResult:  true,
-			ActionType:        model.ActionTypeSendImageMessage,
-			AttachmentURLList: attachmentURLList,
-		}, nil
+		},
+	}, nil, nil
 }
