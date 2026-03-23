@@ -46,7 +46,7 @@ func JimengImageGenerations(config *JimengConfig) ([]*string, error) {
 	}
 	// 设置默认值
 	if config.Model == "" {
-		config.Model = "jimeng-4.0"
+		config.Model = "jimeng-5.0"
 	}
 	if config.ResponseFormat == "" {
 		config.ResponseFormat = "url"
@@ -120,7 +120,7 @@ func JimengImageCompositions(config *JimengConfig) ([]*string, error) {
 	}
 	// 设置默认值
 	if config.Model == "" {
-		config.Model = "jimeng-4.0"
+		config.Model = "jimeng-5.0"
 	}
 	if config.ResponseFormat == "" {
 		config.ResponseFormat = "url"
