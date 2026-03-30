@@ -28,6 +28,11 @@ type MusicListResponse struct {
 	} `json:"result"`
 }
 
+type MusicDetailResponse struct {
+	Code  int         `json:"code"`
+	Songs []MusicInfo `json:"songs"`
+}
+
 type MusicInfo struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
@@ -58,9 +63,12 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 	var result MusicSearchData
 	var music MusicInfo
 	var list MusicListResponse
+	var detail MusicDetailResponse
+
+	// 搜索歌曲
 	_, err := resty.New().R().
 		SetHeader("Content-Type", "application/json").
-		SetQueryParam("cookie", fmt.Sprintf("MUSIC_U=%s", config.MUSIC_U)).
+		SetQueryParam("cookie", fmt.Sprintf("MUSIC_U=%s;os=pc;", config.MUSIC_U)).
 		SetQueryParam("keywords", fmt.Sprintf("%s %s", params.SongTitle, params.Singer)).
 		SetQueryParam("type", "1").
 		SetResult(&list).
@@ -74,13 +82,30 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 
 	music = list.Result.Songs[0]
 
+	// 获取歌曲详情，以获取封面
+	_, err = resty.New().R().
+		SetHeader("Content-Type", "application/json").
+		SetQueryParam("cookie", fmt.Sprintf("MUSIC_U=%s;os=pc;", config.MUSIC_U)).
+		SetQueryParam("ids", fmt.Sprintf("%d", music.ID)).
+		SetResult(&detail).
+		Get("http://netease-cloud-music:3000/song/detail")
+	if err != nil {
+		return utils.CallToolResultError(fmt.Sprintf("获取歌曲失败: %v", err))
+	}
+	if len(detail.Songs) == 0 {
+		return utils.CallToolResultError(fmt.Sprintf("没有搜索到歌曲 %s", params.SongTitle))
+	}
+
+	music = detail.Songs[0]
+
 	var resp MusicSearchResponse
 	_, err = resty.New().R().
 		SetHeader("Content-Type", "application/json").
-		SetQueryParam("cookie", fmt.Sprintf("MUSIC_U=%s", config.MUSIC_U)).
+		SetQueryParam("cookie", fmt.Sprintf("MUSIC_U=%s;os=pc;", config.MUSIC_U)).
 		SetQueryParam("id", fmt.Sprintf("%d", music.ID)).
+		SetQueryParam("level", "dolby").
 		SetResult(&resp).
-		Get("http://netease-cloud-music:3000/song/url")
+		Get("http://netease-cloud-music:3000/song/url/v1")
 	if err != nil {
 		return utils.CallToolResultError(fmt.Sprintf("获取歌曲失败: %v", err))
 	}
