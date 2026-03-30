@@ -23,6 +23,7 @@ type MysqlSettingS struct {
 }
 
 var (
+	MUSIC_U       string // 网易云音乐登录后的 cookie，可以在浏览器控制台获取
 	MCPServerPort int
 	MysqlSettings = &MysqlSettingS{}
 )
@@ -63,6 +64,8 @@ func loadEnvConfig() {
 		log.Fatal("MCPServerPort 必须在 1 到 65535 之间")
 	}
 	MCPServerPort = port
+
+	MUSIC_U = os.Getenv("MUSIC_U")
 
 	MysqlSettings.Host = os.Getenv("MYSQL_HOST")
 	MysqlSettings.Port = os.Getenv("MYSQL_PORT")

@@ -9,6 +9,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"wechat-robot-mcp-server/config"
 	"wechat-robot-mcp-server/model"
 	"wechat-robot-mcp-server/protobuf"
 	"wechat-robot-mcp-server/utils"
@@ -59,6 +60,7 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 	var list MusicListResponse
 	_, err := resty.New().R().
 		SetHeader("Content-Type", "application/json").
+		SetQueryParam("cookie", fmt.Sprintf("MUSIC_U=%s", config.MUSIC_U)).
 		SetQueryParam("keywords", fmt.Sprintf("%s %s", params.SongTitle, params.Singer)).
 		SetQueryParam("type", "1").
 		SetResult(&list).
@@ -75,6 +77,7 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 	var resp MusicSearchResponse
 	_, err = resty.New().R().
 		SetHeader("Content-Type", "application/json").
+		SetQueryParam("cookie", fmt.Sprintf("MUSIC_U=%s", config.MUSIC_U)).
 		SetQueryParam("id", fmt.Sprintf("%d", music.ID)).
 		SetResult(&resp).
 		Get("http://netease-cloud-music:3000/song/url")
