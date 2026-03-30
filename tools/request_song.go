@@ -62,7 +62,7 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 		SetQueryParam("keywords", fmt.Sprintf("%s %s", params.SongTitle, params.Singer)).
 		SetQueryParam("type", "1").
 		SetResult(&list).
-		Get("http://netease-cloud-music:3000/cloudsearch")
+		Get("http://netease-cloud-music:3000/search")
 	if err != nil {
 		return utils.CallToolResultError(fmt.Sprintf("获取歌曲失败: %v", err))
 	}
