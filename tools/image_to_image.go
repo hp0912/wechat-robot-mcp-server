@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -98,10 +100,19 @@ func Image2Image(ctx context.Context, req *mcp.CallToolRequest, params *Image2Im
 		if params.Ratio == "" {
 			params.Ratio = "16:9"
 		}
+
 		config.JiMeng.Ratio = params.Ratio
 		if params.Resolution == "" {
 			params.Resolution = "2k"
 		}
+		// 如果分辨率大于4k，重置为2k
+		re := regexp.MustCompile(`(\d+)`)
+		if matches := re.FindStringSubmatch(params.Resolution); len(matches) > 1 {
+			if num, err := strconv.Atoi(matches[1]); err == nil && num > 4 {
+				params.Resolution = "2k"
+			}
+		}
+
 		config.JiMeng.Resolution = params.Resolution
 		config.JiMeng.ResponseFormat = "url"
 		imageURLs, err = pkg.JimengImageCompositions(&config.JiMeng)
