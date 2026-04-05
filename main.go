@@ -35,42 +35,6 @@ func main() {
 		Description: "微信群聊总结，当用户想总结群聊内容时，可以调用该工具。",
 	}, tools.ChatRoomSummary)
 	mcp.AddTool(server, &mcp.Tool{
-		Name:        "AIDrawing",
-		Title:       "文生图",
-		Description: "AI绘图工具，当用户想通过文本生成图像时，可以调用该工具。",
-		InputSchema: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"prompt": map[string]string{
-					"type":        "string",
-					"description": "根据用户输入内容，提取出的画图提示词，但是不要对提示词进行总结。",
-				},
-				"model": map[string]any{
-					"type":        "string",
-					"description": "画图模型选择（可选）：即梦4.5(jimeng-4.5) / 即梦4.6(jimeng-4.6) / 即梦5.0(jimeng-5.0) / 豆包4.5(doubao-seedream-4.5) / 豆包4.0(doubao-seedream-4.0) / 豆包文生图(doubao-seedream-3.0-t2i) / 豆包图生图(doubao-seededit-3.0-i2i) / 造相基础版(Z-Image) / 造相蒸馏版(Z-Image-Turbo) / 造相图片编辑(Qwen-Image-Edit-2511)，默认: 空(none)。",
-					"enum":        []string{"none", "jimeng-4.5", "jimeng-4.6", "jimeng-5.0", "doubao-seedream-4.5", "doubao-seedream-4.0", "doubao-seedream-3.0-t2i", "doubao-seededit-3.0-i2i", "Z-Image", "Z-Image-Turbo", "Qwen-Image-Edit-2511"},
-					"default":     "none",
-				},
-				"negative_prompt": map[string]string{
-					"type":        "string",
-					"description": "用于描述图像中不希望出现的元素或特征的文本，可选。",
-				},
-				"ratio": map[string]string{
-					"type":        "string",
-					"description": "图像的宽高比，可选，默认16:9。",
-					"default":     "16:9",
-				},
-				"resolution": map[string]string{
-					"type":        "string",
-					"description": "图像的分辨率，可选，默认2k。",
-					"default":     "2k",
-				},
-			},
-			"required":             []string{"prompt"},
-			"additionalProperties": false,
-		},
-	}, tools.Drawing)
-	mcp.AddTool(server, &mcp.Tool{
 		Name:        "AIImage2Image",
 		Title:       "图片修改、图生图",
 		Description: "图片修改、编辑、图片合成工具，基于输入的一张或多张图片，结合文本提示词生成新的图片。支持图片混合、风格转换、内容合成等多种创作模式。输入是文字或图片或两者的组合，输出是图片。",
