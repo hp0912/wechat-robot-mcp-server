@@ -35,50 +35,6 @@ func main() {
 		Description: "微信群聊总结，当用户想总结群聊内容时，可以调用该工具。",
 	}, tools.ChatRoomSummary)
 	mcp.AddTool(server, &mcp.Tool{
-		Name:        "AIVideoGeneration",
-		Title:       "视频生成",
-		Description: "生成一段视频，支持三种模式：1. 纯文本提示词，不使用任何图片。2. 使用单张图片作为首帧。3. 使用两张图片分别作为首帧和尾帧。",
-		InputSchema: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"prompt": map[string]string{
-					"type":        "string",
-					"description": "根据用户输入的文本内容，提取出“生成视频”的提示词，但是不要对提示词进行修改。",
-				},
-				"model": map[string]any{
-					"type":        "string",
-					"description": "图生视频模型选择，默认: 空(none)。",
-					"enum":        []string{"none", "jimeng-video-seedance-2.0", "jimeng-video-3.5-pro", "jimeng-video-veo3", "jimeng-video-veo3.1", "jimeng-video-sora2", "jimeng-video-3.0-pro", "jimeng-video-3.0", "jimeng-video-3.0-fast"},
-					"default":     "none",
-				},
-				"file_paths": map[string]any{
-					"type": "array",
-					"items": map[string]string{
-						"type": "string",
-					},
-					"description": "用于视频的首尾帧的图片地址列表，可选。不提供则表示通过文本生成视频。",
-				},
-				"ratio": map[string]string{
-					"type":        "string",
-					"description": "生成视频比例，可选。",
-					"default":     "16:9",
-				},
-				"resolution": map[string]string{
-					"type":        "string",
-					"description": "生成视频分辨率，可选。",
-					"default":     "2k",
-				},
-				"duration": map[string]any{
-					"type":        "integer",
-					"description": "生成视频时长，单位秒，可选。",
-					"default":     5,
-				},
-			},
-			"required":             []string{"prompt"},
-			"additionalProperties": false,
-		},
-	}, tools.Image2Video)
-	mcp.AddTool(server, &mcp.Tool{
 		Name:        "ImageRecognition",
 		Title:       "图像识别",
 		Description: "图像识别工具，当用户想识别图片中的内容、提取图片中的信息时，可以调用该工具，输入是图片，输出是文字。",
@@ -88,35 +44,6 @@ func main() {
 		Title:       "点歌",
 		Description: "点歌工具，当用户想点播歌曲时，可以调用该工具。",
 	}, tools.RequestSong)
-	mcp.AddTool(server, &mcp.Tool{
-		Name:        "TTS",
-		Title:       "文本转语音",
-		Description: "文本转语音工具，当用户想让你说话、发语音时，或者想将文本内容转换成语音消息时，可以调用该工具。",
-		InputSchema: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"content": map[string]string{
-					"type":        "string",
-					"description": "文本转语音的输入文本。",
-				},
-				"emotion": map[string]any{
-					"type":        "string",
-					"description": "输出语音的情感类型。",
-					"enum":        []string{"happy", "sad", "angry", "surprised", "fear", "hate", "excited", "lovey-dovey", "shy", "comfort", "tension", "tender", "magnetic", "vocal - fry", "ASMR"},
-					"default":     "happy",
-				},
-				"context_texts": map[string]any{
-					"type": "array",
-					"items": map[string]string{
-						"type": "string",
-					},
-					"description": "语音合成的辅助信息，用于模型对话式合成，能更好的体现语音情感。例子，1. 语速调整：比如：context_texts: [\"你可以说慢一点吗？\"] 2. 情绪/语气调整 比如：context_texts=[\"你可以用特别特别痛心的语气说话吗?\"] 3. 音量调整 比如：context_texts=[\"你嗓门再小点。\"] 4. 音感调整 比如：context_texts=[\"你能用骄傲的语气来说话吗？\"]",
-				},
-			},
-			"required":             []string{"content"},
-			"additionalProperties": false,
-		},
-	}, tools.TTS)
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "EmojiTool",
 		Title:       "表情包工具",
