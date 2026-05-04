@@ -99,9 +99,6 @@ func (s *FriendSettingsService) GetAIConfig() settings.AIConfig {
 		if s.globalSettings.ChatModel != "" {
 			aiConfig.Model = s.globalSettings.ChatModel
 		}
-		if s.globalSettings.WorkflowModel != "" {
-			aiConfig.WorkflowModel = s.globalSettings.WorkflowModel
-		}
 		if s.globalSettings.ImageRecognitionModel != "" {
 			aiConfig.ImageRecognitionModel = s.globalSettings.ImageRecognitionModel
 		}
@@ -117,9 +114,6 @@ func (s *FriendSettingsService) GetAIConfig() settings.AIConfig {
 		if s.globalSettings.TTSSettings != nil {
 			aiConfig.TTSSettings = s.globalSettings.TTSSettings
 		}
-		if s.globalSettings.LTTSSettings != nil {
-			aiConfig.LTTSSettings = s.globalSettings.LTTSSettings
-		}
 	}
 	if s.friendSettings != nil {
 		if s.friendSettings.ChatBaseURL != nil && *s.friendSettings.ChatBaseURL != "" {
@@ -130,9 +124,6 @@ func (s *FriendSettingsService) GetAIConfig() settings.AIConfig {
 		}
 		if s.friendSettings.ChatModel != nil && *s.friendSettings.ChatModel != "" {
 			aiConfig.Model = *s.friendSettings.ChatModel
-		}
-		if s.friendSettings.WorkflowModel != nil && *s.friendSettings.WorkflowModel != "" {
-			aiConfig.WorkflowModel = *s.friendSettings.WorkflowModel
 		}
 		if s.friendSettings.ImageRecognitionModel != nil && *s.friendSettings.ImageRecognitionModel != "" {
 			aiConfig.ImageRecognitionModel = *s.friendSettings.ImageRecognitionModel
@@ -148,9 +139,6 @@ func (s *FriendSettingsService) GetAIConfig() settings.AIConfig {
 		}
 		if s.friendSettings.TTSSettings != nil {
 			aiConfig.TTSSettings = s.friendSettings.TTSSettings
-		}
-		if s.friendSettings.LTTSSettings != nil {
-			aiConfig.LTTSSettings = s.friendSettings.LTTSSettings
 		}
 	}
 	aiConfig.BaseURL = utils.NormalizeAIBaseURL(aiConfig.BaseURL)
