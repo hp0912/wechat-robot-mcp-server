@@ -69,7 +69,7 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 	_, err := resty.New().R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParam("cookie", fmt.Sprintf("MUSIC_U=%s;os=pc;", config.MUSIC_U)).
-		SetQueryParam("keywords", params.SongTitle).
+		SetQueryParam("keywords", fmt.Sprintf("%s %s", params.SongTitle, params.Singer)).
 		SetQueryParam("type", "1").
 		SetResult(&list).
 		Get("http://netease-cloud-music:3000/search")
