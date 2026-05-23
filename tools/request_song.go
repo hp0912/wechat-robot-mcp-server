@@ -69,7 +69,7 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 	_, err := resty.New().R().
 		SetHeader("Content-Type", "application/json").
 		SetQueryParam("cookie", fmt.Sprintf("MUSIC_U=%s;os=pc;", config.MUSIC_U)).
-		SetQueryParam("keywords", fmt.Sprintf("%s %s", params.SongTitle, params.Singer)).
+		SetQueryParam("keywords", params.SongTitle).
 		SetQueryParam("type", "1").
 		SetResult(&list).
 		Get("http://netease-cloud-music:3000/search")
@@ -80,7 +80,25 @@ func RequestSong(ctx context.Context, req *mcp.CallToolRequest, params *RequestS
 		return utils.CallToolResultError(fmt.Sprintf("没有搜索到歌曲 %s", params.SongTitle))
 	}
 
-	music = list.Result.Songs[0]
+	for _, song := range list.Result.Songs {
+		if params.Singer != "" {
+			artistNames := make([]string, len(song.Ar))
+			for i, ar := range song.Ar {
+				artistNames[i] = ar.Name
+			}
+			if strings.Contains(strings.Join(artistNames, " "), params.Singer) {
+				music = song
+				break
+			}
+		} else {
+			music = song
+			break
+		}
+	}
+
+	if music.ID == 0 {
+		music = list.Result.Songs[0]
+	}
 
 	// 获取歌曲详情，以获取封面
 	_, err = resty.New().R().
