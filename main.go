@@ -35,11 +35,6 @@ func main() {
 		Description: "微信群聊总结，当用户想总结群聊内容时，可以调用该工具。",
 	}, tools.ChatRoomSummary)
 	mcp.AddTool(server, &mcp.Tool{
-		Name:        "ImageRecognition",
-		Title:       "图像识别",
-		Description: "图像识别工具，当用户想识别图片中的内容、提取图片中的信息时，可以调用该工具，输入是图片，输出是文字。",
-	}, tools.ImageRecognition)
-	mcp.AddTool(server, &mcp.Tool{
 		Name:        "RequestSong",
 		Title:       "点歌",
 		Description: "点歌工具，当用户想点播歌曲时，可以调用该工具。",
